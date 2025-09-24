@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Seja bem-vindo ao Condomínio Blindado</h1>
+    
+    {% if condominios %}
+        <h2>Últimos Condomínios Certificados:</h2>
+        <ul>
+        {% for condominio in condominios %}
+            <li>{{ condominio.nome }} - {{ condominio.cidade }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Ainda não há condomínios certificados.</p>
+    {% endif %}
+
+    <p><a href="{{ url_for('certificar_condominio') }}">Certificar um condomínio</a></p>
+    <p><a href="{{ url_for('cadastrar_empresa') }}">Cadastrar sua empresa</a></p>
+{% endblock %}

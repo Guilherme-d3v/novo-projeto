@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard Administrativo</h1>
+<div class="stats">
+  <div class="stat">Empresas Pendentes/Verificadas: <strong>{{ pend_emp }}</strong></div>
+  <div class="stat">Condomínios Pendentes/Verificados: <strong>{{ pend_cond }}</strong></div>
+  <div class="stat">Selos Criados: <strong>{{ selos }}</strong></div>
+  <div><a href="{{ url_for('admin_logout') }}">Sair</a></div>
+</div>
+
+<h2>Empresas (recentes)</h2>
+<table class="table">
+  <thead><tr><th>Nome</th><th>Status</th><th>E-mail</th><th>Ações</th></tr></thead>
+  <tbody>
+  {% for e in empresas %}
+    <tr>
+      <td>{{ e.nome }}</td>
+      <td>{{ e.status }}{% if e.email_verified %} ✓{% endif %}</td>
+      <td>{{ e.email_comercial }}</td>
+      <td>
+        <form method="post" action="{{ url_for('admin_empresa_action', _id=e.id, acao='aprovar') }}" style="display:inline">
+          <button>Aprovar</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_empresa_action', _id=e.id, acao='rejeitar') }}" style="display:inline">
+          <button class="danger">Rejeitar</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Condomínios (recentes)</h2>
+<table class="table">
+  <thead><tr><th>Nome</th><th>Cidade</th><th>Nível</th><th>Status</th><th>Ações</th></tr></thead>
+  <tbody>
+  {% for c in condominios %}
+    <tr>
+      <td>{{ c.nome }}</td><td>{{ c.cidade }}</td><td>{{ c.nivel }}</td>
+      <td>{{ c.status }}{% if c.email_verified %} ✓{% endif %}</td>
+      <td>
+        <form method="post" action="{{ url_for('admin_condominio_action', _id=c.id, acao='aprovar') }}" style="display:inline">
+          <button>Aprovar</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_condominio_action', _id=c.id, acao='rejeitar') }}" style="display:inline">
+          <button class="danger">Rejeitar</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

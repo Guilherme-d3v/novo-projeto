@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Cadastrar Empresa</h1>
+<form method="post" enctype="multipart/form-data" class="form">
+  <fieldset>
+    <legend>Dados da Empresa</legend>
+    <label>Nome da Empresa *</label><input name="nome" required>
+    <label>CNPJ *</label><input name="cnpj" required>
+    <label>Categorias *</label>
+    <div class="checks">
+      <label><input type="checkbox" name="categorias" value="Administração Condominial"> Administração Condominial</label>
+      <label><input type="checkbox" name="categorias" value="Segurança e Portaria"> Segurança e Portaria</label>
+      <label><input type="checkbox" name="categorias" value="Tecnologia e LGPD"> Tecnologia e LGPD</label>
+      <label><input type="checkbox" name="categorias" value="Manutenção Predial"> Manutenção Predial</label>
+      <label><input type="checkbox" name="categorias" value="Jardinagem e Paisagismo"> Jardinagem e Paisagismo</label>
+      <!-- adicione as outras do seu print -->
+    </div>
+    <label>Descrição *</label><textarea name="descricao" rows="4" required></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Contato</legend>
+    <label>Cidade *</label><input name="cidade" required>
+    <label>Estado *</label><input name="estado" maxlength="2" required>
+    <label>CEP</label><input name="cep">
+    <label>Endereço Completo *</label><input name="endereco" required>
+    <label>Telefone Comercial *</label><input name="telefone" required>
+    <label>Email Comercial *</label><input name="email_comercial" type="email" required>
+    <label>Website</label><input name="website" placeholder="https://">
+  </fieldset>
+
+  <label>Documento (PDF/JPG/PNG, até 16MB)</label>
+  <input type="file" name="doc" accept=".pdf,.jpg,.jpeg,.png">
+
+  <div class="consents">
+    <label><input type="checkbox" required> Consentimento LGPD *</label>
+    <label><input type="checkbox" required> Aceite dos Termos *</label>
+  </div>
+
+  <button type="submit" class="primary">Enviar Cadastro</button>
+</form>
+{% endblock %}

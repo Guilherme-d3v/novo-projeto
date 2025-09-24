@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Portal Condomínio Blindado</h1>
+<form method="post" class="form auth">
+  <h2>Fazer Login</h2>
+  <label>Email</label><input type="email" name="email" required>
+  <label>Senha</label><input type="password" name="senha" required>
+  <button type="submit" class="primary">Entrar</button>
+</form>
+<p class="muted">Não é aberto ao público. Use Entrar apenas se você é administrador.</p>
+{% endblock %}

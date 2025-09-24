@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Mail
+python-dotenv
+itsdangerous
+psycopg2-binary

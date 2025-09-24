@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Condomínios</h1>
+  <div class="grid">
+    {% for c in condominios %}
+    <div class="card">
+      <div class="row">
+        <div>
+          <h3>{{ c.nome }}</h3>
+          <p>{{ c.cidade }} - {{ c.estado or "" }}</p>
+          <p><strong>Nível:</strong> {{ c.nivel }} | <strong>Status:</strong> {{ c.status }}</p>
+          {% if c.pdf_filename %}
+            <p><a href="{{ url_for('uploaded_file', filename=c.pdf_filename) }}" target="_blank">PDF</a></p>
+          {% endif %}
+        </div>
+        <div class="progress"><span style="width: {{ c.progress }}%"></span></div>
+      </div>
+    </div>
+    {% else %}
+      <p>Nenhum condomínio ainda.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

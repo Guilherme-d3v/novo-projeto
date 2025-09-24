@@ -1,0 +1,30 @@
+<form action="/cadastrar" method="POST" enctype="multipart/form-data">
+  <label>Nome:</label>
+  <input type="text" name="nome" required><br>
+
+  <label>Nível de Blindagem:</label>
+  <input type="text" name="nivel" required><br>
+
+  <label>Cidade:</label>
+  <input type="text" name="cidade" required><br>
+
+  <label>Nº de Unidades:</label>
+  <input type="number" name="unidades" required><br>
+
+  <label>Status:</label>
+  <select name="status">
+    <option value="Certificado">Certificado</option>
+    <option value="Em Evolução">Em Evolução</option>
+  </select><br>
+
+  <label>Progresso (%):</label>
+  <input type="number" name="progress" min="0" max="100"><br>
+
+  <label>Email:</label>
+  <input type="email" name="email" required><br>
+
+  <label>PDF:</label>
+  <input type="file" name="pdf" accept="application/pdf"><br>
+
+  <button type="submit">Cadastrar</button>
+</form>
