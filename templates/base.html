@@ -5,25 +5,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Condomínio Blindado{% endblock %}</title>
+<!-- Links corrigidos para o Tailwind CSS e Font Awesome -->
 <script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
-<script src="https://www.google.com/search?q=https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://www.google.com/search?q=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://www.google.com/search?q=https://fonts.googleapis.com/css2%3Ffamily%3DInter:wght%40400%3B500%3B700%26display%3Dswap" rel="stylesheet">
 <style>
-body { font-family: 'Inter', sans-serif; }
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f3f4f6;
+}
 </style>
 </head>
-<body class="bg-gray-100 flex flex-col min-h-screen">
-<header class="bg-white shadow-md p-4">
+<body class="flex flex-col min-h-screen">
+<header class="bg-white shadow-lg p-4 sticky top-0 z-50">
 <nav class="container mx-auto flex justify-between items-center">
-<a href="{{ url_for('index') }}" class="text-2xl font-bold text-gray-800">
+<a href="{{ url_for('index') }}" class="text-3xl font-extrabold text-gray-900">
 Condomínio Blindado
 </a>
 <div class="space-x-4">
-<a href="{{ url_for('certificar_condominio') }}" class="text-gray-600 hover:text-blue-600 font-medium">Certificar Condomínio</a>
-<a href="{{ url_for('cadastrar_empresa') }}" class="text-gray-600 hover:text-blue-600 font-medium">Cadastrar Empresa</a>
-<a href="{{ url_for('lista_certificados') }}" class="text-gray-600 hover:text-blue-600 font-medium">Certificados</a>
-<a href="{{ url_for('lista_empresas') }}" class="text-gray-600 hover:text-blue-600 font-medium">Empresas Parceiras</a>
-<a href="{{ url_for('admin_login') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">Área Admin</a>
+<a href="{{ url_for('certificar_condominio') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">Certificar Condomínio</a>
+<a href="{{ url_for('cadastrar_empresa') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">Cadastrar Empresa</a>
+<a href="{{ url_for('lista_certificados') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">Certificados</a>
+<a href="{{ url_for('lista_empresas') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">Empresas Parceiras</a>
+<a href="{{ url_for('admin_login') }}" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">Área Admin</a>
 </div>
 </nav>
 </header>
@@ -31,9 +35,9 @@ Condomínio Blindado
 <main class="container mx-auto p-6 flex-grow">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <div class="mb-4">
+        <div class="mb-6">
             {% for category, message in messages %}
-            <div class="p-3 rounded-lg text-white mb-2 {% if category == 'success' %}bg-green-500{% elif category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% else %}bg-blue-500{% endif %}">
+            <div class="p-4 rounded-lg text-white mb-2 {% if category == 'success' %}bg-green-500{% elif category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% else %}bg-blue-500{% endif %}">
                 {{ message }}
             </div>
             {% endfor %}
@@ -43,8 +47,8 @@ Condomínio Blindado
     {% block content %}{% endblock %}
 </main>
 
-<footer class="bg-white shadow-inner p-4 mt-8">
-    <div class="container mx-auto text-center text-gray-500">
+<footer class="bg-gray-800 text-white shadow-inner p-4 mt-8">
+    <div class="container mx-auto text-center text-gray-400">
         © 2023 Condomínio Blindado. Todos os direitos reservados.
     </div>
 </footer>

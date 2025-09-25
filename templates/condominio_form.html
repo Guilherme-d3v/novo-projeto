@@ -4,27 +4,129 @@
 
 {% block content %}
 
-<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-<h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Solicitar Certificação de Condomínio</h2>
-<form action="{{ url_for('certificar_condominio') }}" method="post" enctype="multipart/form-data" class="space-y-6">
-<div>
-<label for="nome" class="block text-gray-700 font-semibold mb-2">Nome do Condomínio</label>
-<input type="text" id="nome" name="nome" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-</div>
-<div>
-<label for="cnpj" class="block text-gray-700 font-semibold mb-2">CNPJ</label>
-<input type="text" id="cnpj" name="cnpj" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-<!-- Adicione os outros campos do formulário aqui -->
-<div>
-<label for="pdf" class="block text-gray-700 font-semibold mb-2">Anexar Documento (PDF)</label>
-<input type="file" id="pdf" name="pdf" accept=".pdf" class="w-full p-3 border border-gray-300 rounded-lg">
-</div>
-<div class="text-center">
-<button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
-Enviar Solicitação
-</button>
-</div>
+<div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+<h1 class="text-4xl font-bold text-center text-gray-800 mb-6">Certificar seu Condomínio</h1>
+<p class="text-center text-gray-600 mb-8">
+Preencha o formulário abaixo para iniciar o processo de certificação.
+</p>
+
+<form method="POST" action="{{ url_for('certificar_condominio') }}" enctype="multipart/form-data" class="space-y-6">
+    <!-- Detalhes do Condomínio -->
+    <div class="border-b border-gray-200 pb-4">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Dados do Condomínio</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <input type="text" id="nome" name="nome" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+            <div>
+                <label for="cnpj" class="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
+                <input type="text" id="cnpj" name="cnpj" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div>
+                <label for="tipo" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                <select id="tipo" name="tipo" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <option value="">Selecione um tipo</option>
+                    <option value="residencial">Residencial</option>
+                    <option value="comercial">Comercial</option>
+                    <option value="misto">Misto</option>
+                </select>
+            </div>
+            <div>
+                <label for="unidades" class="block text-sm font-medium text-gray-700 mb-1">Número de Unidades</label>
+                <input type="number" id="unidades" name="unidades" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6 mt-6">
+            <div>
+                <label for="cep" class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                <input type="text" id="cep" name="cep" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+            <div class="md:col-span-2">
+                <label for="endereco" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                <input type="text" id="endereco" name="endereco" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div>
+                <label for="cidade" class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                <input type="text" id="cidade" name="cidade" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+            <div>
+                <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <input type="text" id="estado" name="estado" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+        </div>
+    </div>
+
+    <!-- Contato e Certificação -->
+    <div class="border-b border-gray-200 pb-4">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Informações de Contato e Certificação</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <label for="contato_nome" class="block text-sm font-medium text-gray-700 mb-1">Nome do Contato</label>
+                <input type="text" id="contato_nome" name="contato_nome" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <input type="email" id="email" name="email" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div>
+                <label for="telefone" class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <input type="tel" id="telefone" name="telefone" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+            <div>
+                <label for="whatsapp" class="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
+                <input type="tel" id="whatsapp" name="whatsapp" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+        </div>
+    </div>
+
+    <!-- Documentação e Observações -->
+    <div class="border-b border-gray-200 pb-4">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Documentação e Detalhes</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <label for="nivel" class="block text-sm font-medium text-gray-700 mb-1">Nível de Certificação Desejado</label>
+                <select id="nivel" name="nivel" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <option value="">Selecione um nível</option>
+                    <option value="bronze">Bronze</option>
+                    <option value="prata">Prata</option>
+                    <option value="ouro">Ouro</option>
+                    <option value="platina">Platina</option>
+                </select>
+            </div>
+            <div>
+                <label for="objetivo" class="block text-sm font-medium text-gray-700 mb-1">Objetivo da Certificação</label>
+                <textarea id="objetivo" name="objetivo" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300"></textarea>
+            </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div>
+                <label for="observacoes" class="block text-sm font-medium text-gray-700 mb-1">Observações Adicionais</label>
+                <textarea id="observacoes" name="observacoes" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300"></textarea>
+            </div>
+            <div>
+                <label for="progress" class="block text-sm font-medium text-gray-700 mb-1">Progressão (0-100)</label>
+                <input type="number" id="progress" name="progress" min="0" max="100" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+            </div>
+        </div>
+        <div class="mt-6">
+            <label for="pdf" class="block text-sm font-medium text-gray-700 mb-1">Anexar Documento (PDF)</label>
+            <input type="file" id="pdf" name="pdf" accept=".pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition duration-300">
+        </div>
+    </div>
+    
+    <div class="flex justify-end pt-4">
+        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+            Enviar Solicitação
+        </button>
+    </div>
 </form>
+
 </div>
 {% endblock %}
