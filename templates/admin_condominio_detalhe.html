@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes Condomínio{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+<h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Detalhes do Condomínio</h2>
+<div class="space-y-4">
+<div>
+<span class="font-semibold text-gray-700">Nome:</span>
+<p class="text-gray-900">{{ c.nome }}</p>
+</div>
+<div>
+<span class="font-semibold text-gray-700">CNPJ:</span>
+<p class="text-gray-900">{{ c.cnpj }}</p>
+</div>
+<div>
+<span class="font-semibold text-gray-700">Contato:</span>
+<p class="text-gray-900">{{ c.contato_nome }} ({{ c.email }})</p>
+</div>
+<div>
+<span class="font-semibold text-gray-700">Endereço:</span>
+<p class="text-gray-900">{{ c.endereco }}, {{ c.cidade }} - {{ c.estado }}</p>
+</div>
+<div>
+<span class="font-semibold text-gray-700">Documento:</span>
+{% if c.pdf_filename %}
+<a href="{{ url_for('uploaded_file', filename=c.pdf_filename) }}" class="text-blue-600 hover:underline font-medium" target="_blank">
+Visualizar PDF
+</a>
+{% else %}
+<p class="text-gray-500">Nenhum documento enviado.</p>
+{% endif %}
+</div>
+<div>
+<span class="font-semibold text-gray-700">Status:</span>
+<p class="text-gray-900">{{ c.status | upper }}</p>
+</div>
+<!-- Adicione outros campos de detalhe aqui -->
+</div>
+
+<div class="mt-8 flex justify-end space-x-4">
+    {% if c.status in ['pendente', 'verificado'] %}
+    <form action="{{ url_for('admin_condominio_action', _id=c.id, acao='aprovar') }}" method="post" class="inline-block">
+        <button type="submit" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+            Aprovar
+        </button>
+    </form>
+    <form action="{{ url_for('admin_condominio_action', _id=c.id, acao='rejeitar') }}" method="post" class="inline-block">
+        <button type="submit" class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 transition duration-300">
+            Rejeitar
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+</div>
+{% endblock %}

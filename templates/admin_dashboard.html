@@ -1,152 +1,50 @@
 {% extends "base.html" %}
 
+{% block title %}Dashboard Admin{% endblock %}
+
 {% block content %}
-    <style>
-        /* Estilos básicos para o painel */
-        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .stats-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .card { padding: 20px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
-        .card h3 { margin-top: 0; }
-        .card p { font-size: 2em; margin: 5px 0; font-weight: bold; }
-        
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .status-pendente, .status-verificado { color: orange; font-weight: bold; }
-        .status-aprovado { color: green; font-weight: bold; }
-        .status-rejeitado { color: red; font-weight: bold; }
-        
-        .action-form { display: inline; margin-right: 5px; }
-        .action-btn { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-approve { background-color: green; color: white; }
-        .btn-reject { background-color: red; color: white; }
-    </style>
 
-    <div class="dashboard-header">
-        <h1>Painel Administrativo</h1>
-        <a href="{{ url_for('admin_logout') }}">Sair</a>
-    </div>
+<div class="text-center py-6">
+<h1 class="text-4xl font-extrabold text-gray-900 mb-2">Dashboard Administrativo</h1>
+<p class="text-lg text-gray-600">Gerencie solicitações de condomínios e empresas.</p>
+</div>
 
-    {# Exibe mensagens de Flash #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flashes">
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+<a href="{{ url_for('admin_lista_condominios', status='pendente') }}" class="bg-white p-6 rounded-lg shadow-md text-center hover:shadow-xl transition duration-300">
+<div class="text-4xl font-bold text-blue-600">{{ pend_cond }}</div>
+<div class="text-xl font-semibold text-gray-800 mt-2">Condomínios Pendentes</div>
+<p class="text-sm text-gray-500 mt-1">Verificar e aprovar solicitações.</p>
+</a>
+<a href="{{ url_for('admin_lista_empresas', status='pendente') }}" class="bg-white p-6 rounded-lg shadow-md text-center hover:shadow-xl transition duration-300">
+<div class="text-4xl font-bold text-yellow-600">{{ pend_emp }}</div>
+<div class="text-xl font-semibold text-gray-800 mt-2">Empresas Pendentes</div>
+<p class="text-sm text-gray-500 mt-1">Analisar e aprovar cadastros.</p>
+</a>
+<div class="bg-white p-6 rounded-lg shadow-md text-center">
+<div class="text-4xl font-bold text-green-600">{{ selos }}</div>
+<div class="text-xl font-semibold text-gray-800 mt-2">Condomínios Aprovados</div>
+<p class="text-sm text-gray-500 mt-1">Condomínios que já possuem o selo.</p>
+</div>
+</div>
 
-    <div class="stats-cards">
-        <div class="card">
-            <h3>Condomínios Pendentes</h3>
-            <p>{{ pend_cond }}</p>
-        </div>
-        <div class="card">
-            <h3>Empresas Pendentes</h3>
-            <p>{{ pend_emp }}</p>
-        </div>
-        <div class="card">
-            <h3>Total de Selos Emitidos</h3>
-            <p>{{ selos }}</p>
-        </div>
-    </div>
-
-    <hr>
-
-    {# Tabela de Condomínios Pendentes #}
-    <h2>Últimos 10 Condomínios (Pendentes ou Verificados)</h2>
-    {% if condominios %}
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Verificado</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in condominios %}
-                <tr>
-                    <td>{{ c.id }}</td>
-                    <td>{{ c.nome }}</td>
-                    <td>{{ c.email }}</td>
-                    <td class="status-{{ c.status }}">{{ c.status.capitalize() }}</td>
-                    <td>{{ "Sim" if c.email_verified else "Não" }}</td>
-                    <td>
-                        {# Link para ver PDF - Assumindo que o arquivo está em /uploads/filename #}
-                        {% if c.pdf_filename %}
-                            <a href="{{ url_for('uploaded_file', filename=c.pdf_filename) }}" target="_blank">Ver PDF</a> |
-                        {% endif %}
-
-                        {# Formulário de Aprovação #}
-                        <form method="POST" action="{{ url_for('admin_condominio_action', _id=c.id, acao='aprovar') }}" class="action-form">
-                            <button type="submit" class="action-btn btn-approve">Aprovar</button>
-                        </form>
-
-                        {# Formulário de Rejeição #}
-                        <form method="POST" action="{{ url_for('admin_condominio_action', _id=c.id, acao='rejeitar') }}" class="action-form">
-                            <button type="submit" class="action-btn btn-reject">Rejeitar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Nenhum condomínio encontrado.</p>
-    {% endif %}
-    
-    <hr>
-
-    {# Tabela de Empresas Pendentes #}
-    <h2>Últimas 10 Empresas (Pendentes ou Verificadas)</h2>
-    {% if empresas %}
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Categorias</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for e in empresas %}
-                <tr>
-                    <td>{{ e.id }}</td>
-                    <td>{{ e.nome }}</td>
-                    <td>{{ e.email_comercial }}</td>
-                    <td>{{ e.categorias }}</td>
-                    <td class="status-{{ e.status }}">{{ e.status.capitalize() }}</td>
-                    <td>
-                        {# Link para ver Doc - Assumindo que o arquivo está em /uploads/filename #}
-                        {% if e.doc_filename %}
-                            <a href="{{ url_for('uploaded_file', filename=e.doc_filename) }}" target="_blank">Ver Doc</a> |
-                        {% endif %}
-
-                        {# Formulário de Aprovação #}
-                        <form method="POST" action="{{ url_for('admin_empresa_action', _id=e.id, acao='aprovar') }}" class="action-form">
-                            <button type="submit" class="action-btn btn-approve">Aprovar</button>
-                        </form>
-
-                        {# Formulário de Rejeição #}
-                        <form method="POST" action="{{ url_for('admin_empresa_action', _id=e.id, acao='rejeitar') }}" class="action-form">
-                            <button type="submit" class="action-btn btn-reject">Rejeitar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Nenhuma empresa encontrada.</p>
-    {% endif %}
+<div class="mt-12 text-center">
+<h2 class="text-2xl font-bold text-gray-800 mb-6">Listas Detalhadas</h2>
+<div class="flex justify-center space-x-4">
+<a href="{{ url_for('admin_lista_condominios', status='aprovado') }}" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-600 transition duration-300">
+Condomínios Aprovados
+</a>
+<a href="{{ url_for('admin_lista_condominios', status='rejeitado') }}" class="bg-red-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition duration-300">
+Condomínios Rejeitados
+</a>
+</div>
+<div class="flex justify-center space-x-4 mt-4">
+<a href="{{ url_for('admin_lista_empresas', status='aprovado') }}" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-600 transition duration-300">
+Empresas Aprovadas
+</a>
+<a href="{{ url_for('admin_lista_empresas', status='rejeitado') }}" class="bg-red-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition duration-300">
+Empresas Rejeitadas
+</a>
+</div>
+</div>
 
 {% endblock %}

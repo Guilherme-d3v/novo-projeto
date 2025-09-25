@@ -1,19 +1,45 @@
 {% extends "base.html" %}
 
-{% block content %}
-    <h1>Seja bem-vindo ao Condomínio Blindado</h1>
-    
-    {% if condominios %}
-        <h2>Últimos Condomínios Certificados:</h2>
-        <ul>
-        {% for condominio in condominios %}
-            <li>{{ condominio.nome }} - {{ condominio.cidade }}</li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>Ainda não há condomínios certificados.</p>
-    {% endif %}
+{% block title %}Início{% endblock %}
 
-    <p><a href="{{ url_for('certificar_condominio') }}">Certificar um condomínio</a></p>
-    <p><a href="{{ url_for('cadastrar_empresa') }}">Cadastrar sua empresa</a></p>
+{% block content %}
+
+<div class="text-center py-12">
+<h1 class="text-5xl font-extrabold text-gray-900 mb-4">Condomínio Blindado</h1>
+<p class="text-xl text-gray-600 max-w-2xl mx-auto">
+Certifique seu condomínio para garantir segurança e excelência. Encontre empresas parceiras de confiança.
+</p>
+<div class="mt-8 flex justify-center space-x-4">
+<a href="{{ url_for('certificar_condominio') }}" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg hover:bg-blue-700 transition duration-300">
+Certificar Condomínio
+</a>
+<a href="{{ url_for('cadastrar_empresa') }}" class="bg-gray-800 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg hover:bg-gray-900 transition duration-300">
+Cadastrar Empresa
+</a>
+</div>
+</div>
+
+<div class="mt-12">
+<h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Últimos Condomínios Certificados</h2>
+{% if condominios %}
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+{% for c in condominios %}
+<div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+<h3 class="text-xl font-bold text-gray-900 mb-2">{{ c.nome }}</h3>
+<p class="text-sm text-gray-600 mb-4">{{ c.cidade }} - {{ c.estado }}</p>
+<div class="flex items-center text-green-600">
+<i class="fas fa-check-circle mr-2"></i>
+<span class="font-semibold">Certificado</span>
+</div>
+<p class="text-sm mt-4 text-gray-500">Última atualização: {{ c.created_at.strftime('%d/%m/%Y') }}</p>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="bg-white p-6 rounded-lg text-center text-gray-500">
+Nenhum condomínio certificado encontrado.
+</div>
+{% endif %}
+</div>
+
 {% endblock %}

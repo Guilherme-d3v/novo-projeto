@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes Empresa{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+<h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Detalhes da Empresa</h2>
+<div class="space-y-4">
+<div>
+<span class="font-semibold text-gray-700">Nome:</span>
+<p class="text-gray-900">{{ e.nome }}</p>
+</div>
+<div>
+<span class="font-semibold text-gray-700">CNPJ:</span>
+<p class="text-gray-900">{{ e.cnpj }}</p>
+</div>
+<div>
+<span class="font-semibold text-gray-700">E-mail:</span>
+<p class="text-gray-900">{{ e.email_comercial }}</p>
+</div>
+<div>
+<span class="font-semibold text-gray-700">Documento:</span>
+{% if e.doc_filename %}
+<a href="{{ url_for('uploaded_file', filename=e.doc_filename) }}" class="text-blue-600 hover:underline font-medium" target="_blank">
+Visualizar Documento
+</a>
+{% else %}
+<p class="text-gray-500">Nenhum documento enviado.</p>
+{% endif %}
+</div>
+<div>
+<span class="font-semibold text-gray-700">Status:</span>
+<p class="text-gray-900">{{ e.status | upper }}</p>
+</div>
+<!-- Adicione outros campos de detalhe aqui -->
+</div>
+
+<div class="mt-8 flex justify-end space-x-4">
+    {% if e.status in ['pendente', 'verificado'] %}
+    <form action="{{ url_for('admin_empresa_action', _id=e.id, acao='aprovar') }}" method="post" class="inline-block">
+        <button type="submit" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+            Aprovar
+        </button>
+    </form>
+    <form action="{{ url_for('admin_empresa_action', _id=e.id, acao='rejeitar') }}" method="post" class="inline-block">
+        <button type="submit" class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 transition duration-300">
+            Rejeitar
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+</div>
+{% endblock %}

@@ -1,23 +1,53 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Condomínio Blindado</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Condomínio Blindado{% endblock %}</title>
+<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
+<script src="https://www.google.com/search?q=https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<link href="https://www.google.com/search?q=https://fonts.googleapis.com/css2%3Ffamily%3DInter:wght%40400%3B500%3B700%26display%3Dswap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', sans-serif; }
+</style>
 </head>
-<body>
-    <header>
-        <nav>
-            <a href="{{ url_for('index') }}">Home</a>
-        </nav>
-    </header>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+<header class="bg-white shadow-md p-4">
+<nav class="container mx-auto flex justify-between items-center">
+<a href="{{ url_for('index') }}" class="text-2xl font-bold text-gray-800">
+Condomínio Blindado
+</a>
+<div class="space-x-4">
+<a href="{{ url_for('certificar_condominio') }}" class="text-gray-600 hover:text-blue-600 font-medium">Certificar Condomínio</a>
+<a href="{{ url_for('cadastrar_empresa') }}" class="text-gray-600 hover:text-blue-600 font-medium">Cadastrar Empresa</a>
+<a href="{{ url_for('lista_certificados') }}" class="text-gray-600 hover:text-blue-600 font-medium">Certificados</a>
+<a href="{{ url_for('lista_empresas') }}" class="text-gray-600 hover:text-blue-600 font-medium">Empresas Parceiras</a>
+<a href="{{ url_for('admin_login') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">Área Admin</a>
+</div>
+</nav>
+</header>
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+<main class="container mx-auto p-6 flex-grow">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="mb-4">
+            {% for category, message in messages %}
+            <div class="p-3 rounded-lg text-white mb-2 {% if category == 'success' %}bg-green-500{% elif category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% else %}bg-blue-500{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</main>
 
-    <footer>
-        <p>&copy; 2025 Condomínio Blindado</p>
-    </footer>
+<footer class="bg-white shadow-inner p-4 mt-8">
+    <div class="container mx-auto text-center text-gray-500">
+        © 2023 Condomínio Blindado. Todos os direitos reservados.
+    </div>
+</footer>
+
 </body>
 </html>

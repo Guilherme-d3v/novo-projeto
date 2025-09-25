@@ -52,12 +52,34 @@ def admin_required(fn):
 @app.route("/")
 def index():
     try:
-        condominios = Condominio.query.order_by(Condominio.created_at.desc()).limit(8).all()
+        condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.created_at.desc()).limit(8).all()
     except Exception as e:
         print(f"Erro ao carregar condomínios: {e}")
         condominios = []
     
     return render_template("index.html", condominios=condominios)
+
+@app.route("/condominios-certificados")
+def lista_certificados():
+    """Rota pública para listar todos os condomínios com status 'aprovado'."""
+    try:
+        condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.nome).all()
+    except Exception as e:
+        print(f"Erro ao listar certificados: {e}")
+        condominios = []
+        
+    return render_template("certificados.html", condominios=condominios)
+
+@app.route("/empresas-parceiras")
+def lista_empresas():
+    """Rota pública para listar todas as empresas com status 'aprovado'."""
+    try:
+        empresas = Empresa.query.filter_by(status="aprovado").order_by(Empresa.nome).all()
+    except Exception as e:
+        print(f"Erro ao listar empresas: {e}")
+        empresas = []
+        
+    return render_template("empresas_parceiras.html", empresas=empresas)
 
 @app.route("/certificar-condominio", methods=["GET", "POST"])
 def certificar_condominio():
@@ -248,20 +270,76 @@ def admin_dashboard():
     try:
         pend_emp = Empresa.query.filter(Empresa.status.in_(["pendente", "verificado"])).count()
         pend_cond = Condominio.query.filter(Condominio.status.in_(["pendente", "verificado"])).count()
-        selos = Condominio.query.count()
-        
-        empresas = Empresa.query.order_by(Empresa.created_at.desc()).limit(10).all()
-        condominios = Condominio.query.order_by(Condominio.created_at.desc()).limit(10).all()
+        selos = Condominio.query.filter(Condominio.status == "aprovado").count()
     except Exception as e:
         print(f"Erro no dashboard: {e}")
         pend_emp = pend_cond = selos = 0
-        empresas = condominios = []
     
     return render_template(
         "admin_dashboard.html",
-        pend_emp=pend_emp, pend_cond=pend_cond, selos=selos,
-        empresas=empresas, condominios=condominios
+        pend_emp=pend_emp, pend_cond=pend_cond, selos=selos
     )
+
+@app.route("/admin/condominios")
+@admin_required
+def admin_lista_condominios():
+    """Rota para listar todos os condomínios com base no filtro de status."""
+    status_filter = request.args.get("status", "pendente")
+    query = Condominio.query.order_by(Condominio.created_at.desc())
+    
+    if status_filter == "pendente":
+        condominios = query.filter(Condominio.status.in_(["pendente", "verificado"])).all()
+    else:
+        condominios = query.filter(Condominio.status == status_filter).all()
+        
+    return render_template("admin_lista.html", 
+                           itens=condominios, 
+                           tipo="condominio", 
+                           titulo="Condomínios",
+                           status_filter=status_filter)
+
+@app.route("/admin/empresas")
+@admin_required
+def admin_lista_empresas():
+    """Rota para listar todas as empresas com base no filtro de status."""
+    status_filter = request.args.get("status", "pendente")
+    query = Empresa.query.order_by(Empresa.created_at.desc())
+    
+    if status_filter == "pendente":
+        empresas = query.filter(Empresa.status.in_(["pendente", "verificado"])).all()
+    else:
+        empresas = query.filter(Empresa.status == status_filter).all()
+        
+    return render_template("admin_lista.html", 
+                           itens=empresas, 
+                           tipo="empresa", 
+                           titulo="Empresas Parceiras",
+                           status_filter=status_filter)
+
+
+@app.route("/admin/condominio/<int:_id>")
+@admin_required
+def admin_condominio_detalhe(_id):
+    """Rota para visualizar os detalhes completos de um condomínio."""
+    try:
+        condominio = Condominio.query.get_or_404(_id)
+    except Exception as e:
+        flash(f"Condomínio não encontrado: {str(e)}", "danger")
+        return redirect(url_for("admin_dashboard"))
+        
+    return render_template("admin_condominio_detalhe.html", c=condominio)
+
+@app.route("/admin/empresa/<int:_id>")
+@admin_required
+def admin_empresa_detalhe(_id):
+    """Rota para visualizar os detalhes completos de uma empresa."""
+    try:
+        empresa = Empresa.query.get_or_404(_id)
+    except Exception as e:
+        flash(f"Empresa não encontrada: {str(e)}", "danger")
+        return redirect(url_for("admin_dashboard"))
+        
+    return render_template("admin_empresa_detalhe.html", e=empresa)
 
 @app.post("/admin/condominio/<int:_id>/<string:acao>")
 @admin_required
@@ -273,6 +351,7 @@ def admin_condominio_action(_id, acao):
         elif acao == "rejeitar":
             c.status = "rejeitado"
         db.session.commit()
+        flash(f"Ação '{acao}' executada com sucesso.", "success")
     except Exception as e:
         flash(f"Erro ao processar ação: {str(e)}", "danger")
     
@@ -288,6 +367,7 @@ def admin_empresa_action(_id, acao):
         elif acao == "rejeitar":
             e.status = "rejeitado"
         db.session.commit()
+        flash(f"Ação '{acao}' executada com sucesso.", "success")
     except Exception as e:
         flash(f"Erro ao processar ação: {str(e)}", "danger")
     
