@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <style>
+        /* Estilos básicos (os mesmos do formulário anterior para consistência) */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="tel"],
+        .form-group input[type="url"],
+        .form-group input[type="file"],
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 20px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .checkbox-group label {
+            font-weight: normal;
+        }
+        /* Estilos para as mensagens de Flash */
+        .flash { padding: 10px; margin-bottom: 15px; border-radius: 4px; }
+        .flash.success { background-color: #d4edda; color: #155724; }
+        .flash.warning { background-color: #fff3cd; color: #856404; }
+        .flash.danger  { background-color: #f8d7da; color: #721c24; }
+    </style>
+
+    <h1>Cadastro de Empresa</h1>
+
+    {# Exibe mensagens de feedback #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashes">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data">
+        <h2>1. Informações da Empresa</h2>
+        
+        <div class="form-group">
+            <label for="nome">Razão Social (*)</label>
+            <input type="text" id="nome" name="nome" required>
+        </div>
+
+        <div class="form-group">
+            <label for="cnpj">CNPJ (*)</label>
+            <input type="text" id="cnpj" name="cnpj" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Categorias de Serviço (*)</label>
+            <div class="checkbox-group">
+                {# O backend espera vários valores com o name="categorias" #}
+                <label><input type="checkbox" name="categorias" value="Seguranca"> Segurança</label>
+                <label><input type="checkbox" name="categorias" value="Limpeza"> Limpeza e Conservação</label>
+                <label><input type="checkbox" name="categorias" value="Manutencao"> Manutenção (Geral)</label>
+                <label><input type="checkbox" name="categorias" value="Juridico"> Jurídico/Contabilidade</label>
+                <label><input type="checkbox" name="categorias" value="Reforma"> Reforma e Construção</label>
+                <label><input type="checkbox" name="categorias" value="TI"> TI e Comunicação</label>
+                <label><input type="checkbox" name="categorias" value="Elevadores"> Elevadores</label>
+                <label><input type="checkbox" name="categorias" value="Portaria"> Portaria Remota</label>
+                <label><input type="checkbox" name="categorias" value="Outras"> Outras</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="descricao">Breve Descrição dos Serviços</label>
+            <textarea id="descricao" name="descricao" rows="3"></textarea>
+        </div>
+
+        <hr>
+        <h2>2. Contato e Localização</h2>
+
+        <div class="form-group">
+            <label for="email_comercial">E-mail Comercial (*)</label>
+            <input type="email" id="email_comercial" name="email_comercial" required>
+            <small>Usaremos este e-mail para o link de verificação.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="website">Website (URL)</label>
+            <input type="url" id="website" name="website" placeholder="https://">
+        </div>
+        
+        <div class="form-group">
+            <label for="telefone">Telefone (*)</label>
+            <input type="tel" id="telefone" name="telefone" required>
+        </div>
+
+        <div class="form-group">
+            <label for="cep">CEP</label>
+            <input type="text" id="cep" name="cep">
+        </div>
+        
+        <div class="form-group">
+            <label for="endereco">Endereço</label>
+            <input type="text" id="endereco" name="endereco">
+        </div>
+
+        <div class="form-group">
+            <label for="cidade">Cidade (*)</label>
+            <input type="text" id="cidade" name="cidade" required>
+        </div>
+
+        <div class="form-group">
+            <label for="estado">Estado (UF) (*)</label>
+            <input type="text" id="estado" name="estado" maxlength="2" required>
+        </div>
+
+        <hr>
+        <h2>3. Documentação</h2>
+
+        <div class="form-group">
+            <label for="doc">Anexo (Documento de Registro, Certidão, etc. - PDF/JPG/PNG)</label>
+            <input type="file" id="doc" name="doc" accept=".pdf,.png,.jpg,.jpeg">
+            <small>Tamanho máximo: 16MB. Formatos aceitos: PDF, JPG, PNG.</small>
+        </div>
+
+        <div class="form-group">
+            <button type="submit">Cadastrar e Aguardar Verificação</button>
+        </div>
+    </form>
+{% endblock %}
