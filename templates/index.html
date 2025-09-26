@@ -1,45 +1,104 @@
 {% extends "base.html" %}
-
 {% block title %}Início{% endblock %}
-
 {% block content %}
+    <!-- Hero Section -->
+    <div class="text-center py-12">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-4">Certifique seu condomínio com o <span class="text-blindado-blue">Programa Condomínio Blindado</span></h1>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+            Garanta segurança, excelência e valorização para o seu condomínio.
+        </p>
+        <div class="mt-8 flex justify-center space-x-4">
+            <a href="{{ url_for('certificar_condominio') }}" class="bg-blindado-blue text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">
+                Certificar Condomínio
+            </a>
+            <a href="{{ url_for('cadastrar_empresa') }}" class="bg-gray-800 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-gray-900 transition duration-300">
+                Cadastrar Empresa
+            </a>
+        </div>
+    </div>
 
-<div class="text-center py-12">
-<h1 class="text-5xl font-extrabold text-gray-900 mb-4">Condomínio Blindado</h1>
-<p class="text-xl text-gray-600 max-w-2xl mx-auto">
-Certifique seu condomínio para garantir segurança e excelência. Encontre empresas parceiras de confiança.
-</p>
-<div class="mt-8 flex justify-center space-x-4">
-<a href="{{ url_for('certificar_condominio') }}" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg hover:bg-blue-700 transition duration-300">
-Certificar Condomínio
-</a>
-<a href="{{ url_for('cadastrar_empresa') }}" class="bg-gray-800 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg hover:bg-gray-900 transition duration-300">
-Cadastrar Empresa
-</a>
-</div>
-</div>
+    <!-- Nossa Metodologia -->
+    <div class="py-12 bg-blindado-light-blue">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Nossa Metodologia</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-12">
+                O Programa Condomínio Blindado utiliza uma abordagem sistemática baseada em 7 pilares fundamentais, cada um com critérios específicos e auditoria independente.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-shield-alt text-blindado-blue text-2xl mr-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">Blindagem de Gestão</h3>
+                    </div>
+                    <p class="text-gray-600">Governança, processos decisórios e transparência administrativa.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-gavel text-blindado-blue text-2xl mr-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">Blindagem Jurídica</h3>
+                    </div>
+                    <p class="text-gray-600">Conformidade legal, documentação e proteção jurídica.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-chart-line text-blindado-blue text-2xl mr-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">Blindagem Contábil</h3>
+                    </div>
+                    <p class="text-gray-600">Controles financeiros, auditoria e prestação de contas.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-laptop-code text-blindado-blue text-2xl mr-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">Blindagem Tecnológica & LGPD</h3>
+                    </div>
+                    <p class="text-gray-600">Proteção de dados, backup e conformidade com LGPD.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-users text-blindado-blue text-2xl mr-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">Terceirização & Fornecedores</h3>
+                    </div>
+                    <p class="text-gray-600">Gestão de contratos, qualificação e monitoramento.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-lock text-blindado-blue text-2xl mr-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">Segurança Operacional</h3>
+                    </div>
+                    <p class="text-gray-600">Protocolo de segurança, emergência e prevenção.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-accessible-icon text-blindado-blue text-2xl mr-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">ESG & Acessibilidade</h3>
+                    </div>
+                    <p class="text-gray-600">Sustentabilidade, responsabilidade social e inclusão.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="mt-12">
-<h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Últimos Condomínios Certificados</h2>
-{% if condominios %}
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-{% for c in condominios %}
-<div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-<h3 class="text-xl font-bold text-gray-900 mb-2">{{ c.nome }}</h3>
-<p class="text-sm text-gray-600 mb-4">{{ c.cidade }} - {{ c.estado }}</p>
-<div class="flex items-center text-green-600">
-<i class="fas fa-check-circle mr-2"></i>
-<span class="font-semibold">Certificado</span>
-</div>
-<p class="text-sm mt-4 text-gray-500">Última atualização: {{ c.created_at.strftime('%d/%m/%Y') }}</p>
-</div>
-{% endfor %}
-</div>
-{% else %}
-<div class="bg-white p-6 rounded-lg text-center text-gray-500">
-Nenhum condomínio certificado encontrado.
-</div>
-{% endif %}
-</div>
-
+    <!-- Últimos Condomínios Certificados -->
+    <div class="py-12">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Últimos Condomínios Certificados</h2>
+        {% if condominios %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {% for c in condominios %}
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ c.nome }}</h3>
+                        <p class="text-sm text-gray-600 mb-4">{{ c.cidade }} - {{ c.estado }}</p>
+                        <div class="flex items-center text-green-600">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span class="font-semibold">Certificado</span>
+                        </div>
+                        <p class="text-sm mt-4 text-gray-500">Última atualização: {{ c.created_at.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white p-6 rounded-lg text-center text-gray-500">
+                Nenhum condomínio certificado encontrado.
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}
