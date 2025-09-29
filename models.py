@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash, generate_password_hash 
 
 db = SQLAlchemy()
 
@@ -25,6 +26,22 @@ class Condominio(db.Model):
     status = db.Column(db.String(20), default="pendente")
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    password_hash = db.Column(db.String(128), nullable=True) 
+    
+    # NOVO CAMPO: Indica se o usuário precisa trocar a senha na próxima vez que logar
+    needs_password_change = db.Column(db.Boolean, default=False) 
+
+    def set_password(self, password):
+        """Hashea e salva a senha."""
+        self.password_hash = generate_password_hash(password) 
+
+    def check_password(self, password):
+        """Verifica se a senha em texto puro corresponde ao hash."""
+        if not self.password_hash:
+            return False
+        return check_password_hash(self.password_hash, password)
+
 
 class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,3 +60,18 @@ class Empresa(db.Model):
     status = db.Column(db.String(20), default="pendente")
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    password_hash = db.Column(db.String(128), nullable=True) 
+    
+    # NOVO CAMPO: Indica se o usuário precisa trocar a senha na próxima vez que logar
+    needs_password_change = db.Column(db.Boolean, default=False) 
+    
+    def set_password(self, password):
+        """Hashea e salva a senha."""
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        """Verifica se a senha em texto puro corresponde ao hash."""
+        if not self.password_hash:
+            return False
+        return check_password_hash(self.password_hash, password)

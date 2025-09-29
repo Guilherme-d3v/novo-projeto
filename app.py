@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from uuid import uuid4
 from functools import wraps
+import secrets 
+import string  
 
 from flask import (
     Flask, render_template, request, redirect,
@@ -10,6 +12,7 @@ from flask import (
 from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash 
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from dotenv import load_dotenv
 
@@ -41,12 +44,27 @@ serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def admin_required(fn):
+# Função para gerar senha temporária segura
+def generate_temp_password(length=12):
+    """Gera uma senha temporária complexa de 12 caracteres."""
+    characters = string.ascii_letters + string.digits + string.punctuation
+    temp_password = [
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.digits),
+        secrets.choice(string.punctuation),
+    ]
+    temp_password += [secrets.choice(characters) for _ in range(length - 4)]
+    secrets.SystemRandom().shuffle(temp_password)
+    return ''.join(temp_password)
+
+
+def login_required(fn):
     @wraps(fn)
     def _wrap(*args, **kwargs):
-        if session.get("is_admin"):
+        if session.get("user_type"):
             return fn(*args, **kwargs)
-        return redirect(url_for("admin_login"))
+        return redirect(url_for("login"))
     return _wrap
 
 @app.route("/")
@@ -54,7 +72,7 @@ def index():
     try:
         condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.created_at.desc()).limit(8).all()
     except Exception as e:
-        print(f"Erro ao carregar condomínios: {e}")
+        print(f"Erro ao carregar condomínios: {e}") 
         condominios = []
     
     return render_template("index.html", condominios=condominios)
@@ -66,7 +84,11 @@ def certificar_condominio():
             form = request.form
             pdf_file = request.files.get("pdf")
             
-            # Tratamento de erro para campos numéricos
+            # CORREÇÃO DO BUG: Não exige senha forte nem validação no cadastro.
+            # A senha será gerada e enviada pelo Admin após a aprovação.
+            senha_provisoria = "placeholder_pre_aprovacao"
+            
+            # Tratamento de erro para campos numéricos (DEVE PERMANECER)
             unidades = 0
             if form.get("unidades"):
                 try:
@@ -101,8 +123,12 @@ def certificar_condominio():
                 observacoes=form.get("observacoes", "").strip(),
                 progress=progress,
                 status="pendente",
-                email_verified=False
+                email_verified=False,
+                needs_password_change=False 
             )
+            
+            # Ação: Salvar a senha PROVISÓRIA.
+            c.set_password(senha_provisoria)
             
             if pdf_file and pdf_file.filename:
                 if not allowed_file(pdf_file.filename) or not pdf_file.filename.lower().endswith(".pdf"):
@@ -150,6 +176,9 @@ def cadastrar_empresa():
             form = request.form
             doc_file = request.files.get("doc")
             
+            # CORREÇÃO DO BUG: Não exige senha forte nem validação no cadastro.
+            senha_provisoria = "placeholder_pre_aprovacao"
+            
             categorias = ",".join(request.form.getlist("categorias"))
             
             e = Empresa(
@@ -165,8 +194,12 @@ def cadastrar_empresa():
                 email_comercial=form.get("email_comercial", "").strip(),
                 website=form.get("website", "").strip(),
                 status="pendente",
-                email_verified=False
+                email_verified=False,
+                needs_password_change=False
             )
+            
+            # Ação: Salvar a senha PROVISÓRIA.
+            e.set_password(senha_provisoria)
             
             if doc_file and doc_file.filename:
                 if not allowed_file(doc_file.filename):
@@ -206,6 +239,7 @@ def cadastrar_empresa():
     
     return render_template("empresa_form.html")
 
+
 @app.route("/verificar")
 def verificar_email():
     token = request.args.get("token", "")
@@ -243,25 +277,127 @@ def verificar_email():
     
     return redirect(url_for("index"))
 
-@app.route("/entrar", methods=["GET", "POST"])
-def admin_login():
+@app.route("/login", methods=["GET", "POST"])
+def login():
     if request.method == "POST":
         email = request.form.get("email")
         senha = request.form.get("senha")
-        if email == app.config.get("ADMIN_EMAIL") and senha == app.config.get("ADMIN_PASSWORD"):
-            session["is_admin"] = True
+        
+        # 1. Tentar Login como ADMIN (SEGURANÇA IMPLEMENTADA!)
+        admin_email = app.config.get("ADMIN_EMAIL")
+        admin_password_hash = app.config.get("ADMIN_PASSWORD_HASH") 
+        
+        # Checagem SEGURA: usa o HASH do .env e a senha em texto puro do form
+        if email == admin_email and check_password_hash(admin_password_hash, senha):
+            session.clear()
+            session["user_type"] = "admin"
+            session["user_id"] = "admin"
+            flash("Login de Administrador efetuado.", "success")
             return redirect(url_for("admin_dashboard"))
+
+        # 2. Tentar Login como CONDOMÍNIO
+        condominio = Condominio.query.filter_by(email=email).first()
+        if condominio and condominio.check_password(senha):
+            session.clear()
+            session["user_type"] = "condominio"
+            session["user_id"] = condominio.id
+            flash(f"Bem-vindo(a), {condominio.contato_nome}!", "success")
+            
+            # NOVO: Verificar se precisa mudar a senha
+            if condominio.needs_password_change:
+                flash("Por favor, defina uma nova senha para sua conta por segurança.", "info")
+                return redirect(url_for("mudar_senha"))
+
+            return redirect(url_for("condominio_dashboard"))
+
+        # 3. Tentar Login como EMPRESA
+        empresa = Empresa.query.filter_by(email_comercial=email).first()
+        if empresa and empresa.check_password(senha):
+            session.clear()
+            session["user_type"] = "empresa"
+            session["user_id"] = empresa.id
+            flash(f"Bem-vindo(a), {empresa.nome}!", "success")
+            
+            # NOVO: Verificar se precisa mudar a senha
+            if empresa.needs_password_change:
+                flash("Por favor, defina uma nova senha para sua conta por segurança.", "info")
+                return redirect(url_for("mudar_senha"))
+
+            return redirect(url_for("empresa_dashboard"))
+        
         flash("Credenciais inválidas.", "danger")
-    return render_template("admin_login.html")
+        
+    return render_template("login.html") 
+
+# NOVA ROTA: Rota forçada para troca de senha
+@app.route("/mudar-senha", methods=["GET", "POST"])
+@login_required
+def mudar_senha():
+    user_type = session.get("user_type")
+    user_id = session.get("user_id")
+    
+    # Admins nao precisam trocar senha aqui
+    if user_type == "admin":
+        flash("Administradores não precisam usar este recurso.", "warning")
+        return redirect(url_for("admin_dashboard"))
+        
+    user_entity = None
+    if user_type == "condominio":
+        user_entity = Condominio.query.get(user_id)
+    elif user_type == "empresa":
+        user_entity = Empresa.query.get(user_id)
+        
+    if not user_entity:
+        return redirect(url_for("logout"))
+        
+    # Se o flag for False e ele tentar acessar a rota, o redireciona
+    if not user_entity.needs_password_change:
+        flash("Sua senha já está segura.", "success")
+        return redirect(url_for(f"{user_type}_dashboard"))
+    
+    if request.method == "POST":
+        nova_senha = request.form.get("nova_senha")
+        confirma_senha = request.form.get("confirma_senha")
+        
+        if nova_senha != confirma_senha:
+            flash("A nova senha e a confirmação de senha não são iguais.", "danger")
+            return redirect(request.url)
+
+        if not nova_senha or len(nova_senha) < 6:
+            flash("A senha deve ter pelo menos 6 caracteres.", "danger")
+            return redirect(request.url)
+            
+        try:
+            # Salva a nova senha e reseta o flag
+            user_entity.set_password(nova_senha)
+            user_entity.needs_password_change = False
+            db.session.commit()
+            
+            flash("Sua senha foi alterada com sucesso! Você está logado.", "success")
+            return redirect(url_for(f"{user_type}_dashboard"))
+            
+        except Exception as e:
+            flash(f"Erro ao salvar a nova senha: {str(e)}", "danger")
+            return redirect(request.url)
+            
+    # GET request
+    return render_template("mudar_senha.html") 
+
 
 @app.route("/sair")
-def admin_logout():
+def logout():
     session.clear()
+    flash("Sessão encerrada.", "info")
     return redirect(url_for("index"))
 
+
 @app.route("/admin")
-@admin_required
+@login_required
 def admin_dashboard():
+    if session.get("user_type") != "admin":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+    
     try:
         pend_emp = Empresa.query.filter(Empresa.status.in_(["pendente", "verificado"])).count()
         pend_cond = Condominio.query.filter(Condominio.status.in_(["pendente", "verificado"])).count()
@@ -280,9 +416,142 @@ def admin_dashboard():
         empresas=empresas, condominios=condominios
     )
 
+@app.route("/dashboard/condominio")
+@login_required
+def condominio_dashboard():
+    user_id = session.get("user_id")
+    
+    if session.get("user_type") != "condominio" or user_id == "admin":
+        flash("Acesso negado.", "danger")
+        return redirect(url_for("logout"))
+        
+    condominio = Condominio.query.get_or_404(user_id)
+    
+    if condominio.needs_password_change:
+        return redirect(url_for("mudar_senha"))
+        
+    return render_template("condominio_dashboard.html", c=condominio)
+
+@app.route("/dashboard/empresa")
+@login_required
+def empresa_dashboard():
+    user_id = session.get("user_id")
+
+    if session.get("user_type") != "empresa" or user_id == "admin":
+        flash("Acesso negado.", "danger")
+        return redirect(url_for("logout"))
+        
+    empresa = Empresa.query.get_or_404(user_id)
+    
+    if empresa.needs_password_change:
+        return redirect(url_for("mudar_senha"))
+
+    return render_template("empresa_dashboard.html", e=empresa)
+
+
+@app.post("/admin/condominio/<int:_id>/<string:acao>")
+@login_required
+def admin_condominio_action(_id, acao):
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
+    
+    try:
+        c = Condominio.query.get_or_404(_id)
+        
+        if acao == "aprovar":
+            if not c.email_verified:
+                flash("Condomínio não verificou o e-mail. Não é possível aprovar.", "warning")
+                return redirect(url_for("admin_dashboard"))
+                
+            c.status = "aprovado"
+            
+            # Gerar e Enviar Senha Temporária
+            if not c.password_hash or c.needs_password_change == False: 
+                temp_password = generate_temp_password()
+                c.set_password(temp_password)
+                c.needs_password_change = True 
+
+                try:
+                    msg = Message(
+                        "Acesso Aprovado e Senha Temporária - Condomínio Blindado",
+                        sender=app.config["MAIL_USERNAME"],
+                        recipients=[c.email]
+                    )
+                    msg.body = (
+                        f"Parabéns! O condomínio {c.nome} foi aprovado.\n\n"
+                        f"Sua senha temporária é: {temp_password}\n"
+                        f"Faça login em {url_for('login', _external=True)} para acessar e **MUDAR SUA SENHA IMEDIATAMENTE**."
+                    )
+                    mail.send(msg)
+                    flash("Aprovação salva. Senha temporária enviada por e-mail.", "success")
+                except Exception as e:
+                    print("Falha ao enviar e-mail de senha temporária:", e)
+                    flash("Aprovação salva, mas houve falha ao enviar o e-mail. Verifique o console.", "warning")
+
+        elif acao == "rejeitar":
+            c.status = "rejeitado"
+            c.needs_password_change = False
+            flash("Condomínio rejeitado.", "info")
+            
+        db.session.commit()
+    except Exception as e:
+        flash(f"Erro ao processar ação: {str(e)}", "danger")
+    
+    return redirect(url_for("admin_dashboard"))
+
+@app.post("/admin/empresa/<int:_id>/<string:acao>")
+@login_required
+def admin_empresa_action(_id, acao):
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
+    
+    try:
+        e = Empresa.query.get_or_404(_id)
+        
+        if acao == "aprovar":
+            if not e.email_verified:
+                flash("Empresa não verificou o e-mail. Não é possível aprovar.", "warning")
+                return redirect(url_for("admin_dashboard"))
+                
+            e.status = "aprovado"
+            
+            # Gerar e Enviar Senha Temporária
+            if not e.password_hash or e.needs_password_change == False: 
+                temp_password = generate_temp_password()
+                e.set_password(temp_password)
+                e.needs_password_change = True 
+
+                try:
+                    msg = Message(
+                        "Acesso Aprovado e Senha Temporária - Condomínio Blindado",
+                        sender=app.config["MAIL_USERNAME"],
+                        recipients=[e.email_comercial]
+                    )
+                    msg.body = (
+                        f"Parabéns! A empresa {e.nome} foi aprovada.\n\n"
+                        f"Sua senha temporária é: {temp_password}\n"
+                        f"Faça login em {url_for('login', _external=True)} para acessar e **MUDAR SUA SENHA IMEDIATAMENTE**."
+                    )
+                    mail.send(msg)
+                    flash("Aprovação salva. Senha temporária enviada por e-mail.", "success")
+                except Exception as e:
+                    print("Falha ao enviar e-mail de senha temporária:", e)
+                    flash("Aprovação salva, mas houve falha ao enviar o e-mail. Verifique o console.", "warning")
+
+        elif acao == "rejeitar":
+            e.status = "rejeitado"
+            e.needs_password_change = False
+            flash("Empresa rejeitada.", "info")
+            
+        db.session.commit()
+    except Exception as e:
+        flash(f"Erro ao processar ação: {str(e)}", "danger")
+    
+    return redirect(url_for("admin_dashboard"))
+
+
 @app.route("/admin/condominio/<int:_id>")
-@admin_required
+@login_required
 def admin_condominio_detalhe(_id):
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
     try:
         condominio = Condominio.query.get_or_404(_id)
     except Exception as e:
@@ -292,8 +561,9 @@ def admin_condominio_detalhe(_id):
     return render_template("admin_condominio_detalhe.html", c=condominio)
 
 @app.route("/admin/empresa/<int:_id>")
-@admin_required
+@login_required
 def admin_empresa_detalhe(_id):
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
     try:
         empresa = Empresa.query.get_or_404(_id)
     except Exception as e:
@@ -303,8 +573,9 @@ def admin_empresa_detalhe(_id):
     return render_template("admin_empresa_detalhe.html", e=empresa)
 
 @app.route("/admin/condominios")
-@admin_required
+@login_required
 def admin_lista_condominios():
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
     status_filter = request.args.get("status", "pendente")
     
     query = Condominio.query.order_by(Condominio.created_at.desc())
@@ -319,14 +590,15 @@ def admin_lista_condominios():
         condominios = query.all()
         
     return render_template("admin_lista.html",
-                           itens=condominios,
-                           tipo="condominio",
-                           titulo="Condomínios",
-                           status_filter=status_filter)
+                             itens=condominios,
+                             tipo="condominio",
+                             titulo="Condomínios",
+                             status_filter=status_filter)
 
 @app.route("/admin/empresas")
-@admin_required
+@login_required
 def admin_lista_empresas():
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
     status_filter = request.args.get("status", "pendente")
     
     query = Empresa.query.order_by(Empresa.created_at.desc())
@@ -341,10 +613,10 @@ def admin_lista_empresas():
         empresas = query.all()
         
     return render_template("admin_lista.html",
-                           itens=empresas,
-                           tipo="empresa",
-                           titulo="Empresas Parceiras",
-                           status_filter=status_filter)
+                             itens=empresas,
+                             tipo="empresa",
+                             titulo="Empresas Parceiras",
+                             status_filter=status_filter)
 
 @app.route("/condominios-certificados")
 def lista_certificados():
@@ -366,41 +638,10 @@ def lista_empresas():
         
     return render_template("empresas_parceiras.html", empresas=empresas)
 
-@app.post("/admin/condominio/<int:_id>/<string:acao>")
-@admin_required
-def admin_condominio_action(_id, acao):
-    try:
-        c = Condominio.query.get_or_404(_id)
-        if acao == "aprovar":
-            c.status = "aprovado"
-        elif acao == "rejeitar":
-            c.status = "rejeitado"
-        db.session.commit()
-    except Exception as e:
-        flash(f"Erro ao processar ação: {str(e)}", "danger")
-    
-    return redirect(url_for("admin_dashboard"))
-
-@app.post("/admin/empresa/<int:_id>/<string:acao>")
-@admin_required
-def admin_empresa_action(_id, acao):
-    try:
-        e = Empresa.query.get_or_404(_id)
-        if acao == "aprovar":
-            e.status = "aprovado"
-        elif acao == "rejeitar":
-            e.status = "rejeitado"
-        db.session.commit()
-    except Exception as e:
-        flash(f"Erro ao processar ação: {str(e)}", "danger")
-    
-    return redirect(url_for("admin_dashboard"))
-
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
-# Adicionar tratamento de erro para debug
 @app.errorhandler(500)
 def internal_error(error):
     return f"Erro interno: {error}", 500
