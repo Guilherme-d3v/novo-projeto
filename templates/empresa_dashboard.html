@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Dashboard da Empresa{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-lg my-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard da Empresa: {{ e.nome }}</h1>
+
+    <!-- Status e Dados -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-blindado-light-blue p-6 rounded-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Status do Cadastro</h2>
+            <p class="text-lg {{ 'text-green-600' if e.status == 'aprovado' else 'text-yellow-600' if e.status == 'verificado' else 'text-gray-600' }}">
+                {{ e.status|upper }}
+            </p>
+        </div>
+
+        <div class="bg-blindado-light-blue p-6 rounded-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Dados da Empresa</h2>
+            <p class="text-gray-700"><span class="font-semibold">CNPJ:</span> {{ e.cnpj }}</p>
+            <p class="text-gray-700"><span class="font-semibold">Endereço:</span> {{ e.endereco }}, {{ e.cidade }} - {{ e.estado }}</p>
+            <p class="text-gray-700"><span class="font-semibold">E-mail:</span> {{ e.email_comercial }}</p>
+            <p class="text-gray-700"><span class="font-semibold">Telefone:</span> {{ e.telefone }}</p>
+            {% if e.website %}
+                <p class="text-gray-700"><span class="font-semibold">Website:</span> <a href="{{ e.website }}" class="text-blindado-blue hover:underline">{{ e.website }}</a></p>
+            {% endif %}
+        </div>
+
+        <div class="bg-blindado-light-blue p-6 rounded-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Categorias de Serviço</h2>
+            {% if e.categorias %}
+                {% for categoria in e.categorias.split(',') %}
+                    <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+                        {{ categoria|upper }}
+                    </span>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-600">Nenhuma categoria cadastrada.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Documentos -->
+    <div class="bg-blindado-light-blue p-6 rounded-lg mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Documentos</h2>
+        {% if e.doc_filename %}
+            <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div>
+                    <i class="fas fa-file-alt text-gray-500 mr-2"></i>
+                    <span>{{ e.doc_filename }}</span>
+                </div>
+                <a href="{{ url_for('uploaded_file', filename=e.doc_filename) }}" class="text-blindado-blue hover:underline">
+                    <i class="fas fa-download mr-1"></i> Baixar
+                </a>
+            </div>
+        {% else %}
+            <p class="text-gray-600">Nenhum documento enviado.</p>
+        {% endif %}
+        <form action="#" method="post" enctype="multipart/form-data" class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Enviar Novo Documento (PDF/JPG/PNG)</label>
+            <input type="file" name="documento" accept=".pdf,.jpg,.jpeg,.png" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
+                file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100">
+            <button type="submit" class="mt-2 bg-blindado-blue text-white py-2 px-4 rounded-lg hover:bg-blindado-dark transition duration-300">
+                Enviar Documento
+            </button>
+        </form>
+    </div>
+
+    <!-- Descrição -->
+    <div class="bg-blindado-light-blue p-6 rounded-lg">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Descrição dos Serviços</h2>
+        <p class="text-gray-700">{{ e.descricao or 'Não informado' }}</p>
+    </div>
+</div>
+{% endblock %}

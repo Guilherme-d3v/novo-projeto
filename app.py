@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 
 from models import db, Condominio, Empresa
 from config import Config
+from werkzeug.utils import secure_filename
 
 # Carregar variáveis de ambiente PRIMEIRO
 load_dotenv()
@@ -66,6 +67,13 @@ def login_required(fn):
             return fn(*args, **kwargs)
         return redirect(url_for("login"))
     return _wrap
+
+
+
+
+
+
+
 
 @app.route("/")
 def index():
@@ -658,3 +666,33 @@ def create_tables():
 if __name__ == "__main__":
     create_tables()
     app.run(debug=True)
+    
+    
+    
+@app.route("/condominio_dashboard", methods=["GET", "POST"])
+@login_required
+def novo_condominio_dashboard():
+    user_id = session.get("user_id")
+    if session.get("user_type") != "condominio" or user_id == "admin":
+        flash("Acesso negado.", "danger")
+        return redirect(url_for("logout"))
+
+    c = Condominio.query.get_or_404(user_id)
+
+    if c.needs_password_change:
+        return redirect(url_for("mudar_senha"))
+
+    # Lógica para upload de documentos (se houver POST)
+    if request.method == "POST":
+        documento = request.files.get("documento")
+        if documento and documento.filename:
+            if allowed_file(documento.filename) and documento.filename.lower().endswith(".pdf"):
+                safe = secure_filename(documento.filename)
+                c.pdf_filename = f"{uuid4().hex}_{safe}"
+                documento.save(UPLOAD_DIR / c.pdf_filename)
+                db.session.commit()
+                flash("Documento enviado com sucesso!", "success")
+            else:
+                flash("Envie um PDF válido.", "warning")
+
+    return render_template("condominio_dashboard.html", c=c)

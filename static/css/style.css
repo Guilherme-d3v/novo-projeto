@@ -1,4 +1,4 @@
-/* Cores personalizadas */
+/* Cores personalizadas (existentes) */
 .bg-blindado-blue {
     background-color: #1e88e5;
 }
@@ -12,16 +12,49 @@
     color: #1e88e5;
 }
 
-/* Sombras e transições */
+/* Sombras e transições (existentes) */
 .header-shadow {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilo para os cards de metodologia */
+/* Estilo para os cards de metodologia (existentes) */
 .methodology-card {
     transition: transform 0.3s, box-shadow 0.3s;
 }
 .methodology-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* NOVOS ESTILOS (adicionados) */
+.dashboard-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e2e8f0;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background-color: #1e88e5;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    background-color: #e2e8f0;
+    color: #4a5568;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
 }
