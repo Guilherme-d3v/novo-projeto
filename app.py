@@ -552,56 +552,6 @@ def admin_empresa_action(_id, acao):
     return redirect(url_for("admin_dashboard"))
 
 
-@app.post("/admin/empresa/<int:_id>/<string:acao>")
-@login_required
-def admin_empresa_action(_id, acao):
-    if session.get("user_type") != "admin": return redirect(url_for("logout"))
-    
-    try:
-        e = Empresa.query.get_or_404(_id)
-        
-        if acao == "aprovar":
-            if not e.email_verified:
-                flash("Empresa não verificou o e-mail. Não é possível aprovar.", "warning")
-                return redirect(url_for("admin_dashboard"))
-                
-            e.status = "aprovado"
-            
-            # Gerar e Enviar Senha Temporária
-            if not e.password_hash or e.needs_password_change == False: 
-                temp_password = generate_temp_password()
-                e.set_password(temp_password)
-                e.needs_password_change = True 
-
-                try:
-                    msg = Message(
-                        "Acesso Aprovado e Senha Temporária - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME"],
-                        recipients=[e.email_comercial]
-                    )
-                    msg.body = (
-                        f"Parabéns! A empresa {e.nome} foi aprovada.\n\n"
-                        f"Sua senha temporária é: {temp_password}\n"
-                        f"Faça login em {url_for('login', _external=True)} para acessar e **MUDAR SUA SENHA IMEDIATAMENTE**."
-                    )
-                    mail.send(msg)
-                    flash("Aprovação salva. Senha temporária enviada por e-mail.", "success")
-                except Exception as e:
-                    print("Falha ao enviar e-mail de senha temporária:", e)
-                    flash("Aprovação salva, mas houve falha ao enviar o e-mail. Verifique o console.", "warning")
-
-        elif acao == "rejeitar":
-            e.status = "rejeitado"
-            e.needs_password_change = False
-            flash("Empresa rejeitada.", "info")
-            
-        db.session.commit()
-    except Exception as e:
-        flash(f"Erro ao processar ação: {str(e)}", "danger")
-    
-    return redirect(url_for("admin_dashboard"))
-
-
 @app.route("/admin/condominio/<int:_id>")
 @login_required
 def admin_condominio_detalhe(_id):
