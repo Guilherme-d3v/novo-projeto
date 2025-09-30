@@ -3,7 +3,7 @@ from pathlib import Path
 from uuid import uuid4
 from functools import wraps
 import secrets 
-import string  
+import string
 
 from flask import (
     Flask, render_template, request, redirect,
@@ -69,17 +69,12 @@ def login_required(fn):
     return _wrap
 
 
-
-
-
-
-
-
 @app.route("/")
 def index():
     try:
         condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.created_at.desc()).limit(8).all()
     except Exception as e:
+        # Se a tabela ainda não existe (no primeiro load), esta exceção evita o crash.
         print(f"Erro ao carregar condomínios: {e}") 
         condominios = []
     
@@ -92,11 +87,10 @@ def certificar_condominio():
             form = request.form
             pdf_file = request.files.get("pdf")
             
-            # CORREÇÃO DO BUG: Não exige senha forte nem validação no cadastro.
             # A senha será gerada e enviada pelo Admin após a aprovação.
             senha_provisoria = "placeholder_pre_aprovacao"
             
-            # Tratamento de erro para campos numéricos (DEVE PERMANECER)
+            # Tratamento de erro para campos numéricos
             unidades = 0
             if form.get("unidades"):
                 try:
@@ -144,7 +138,8 @@ def certificar_condominio():
                     return redirect(request.url)
                 safe = secure_filename(pdf_file.filename)
                 c.pdf_filename = f"{uuid4().hex}_{safe}"
-                pdf_file.save(UPLOAD_DIR / c.pdf_filename)
+                # 🔴 CORREÇÃO: Comentar linha para evitar erro de escrita no Render Free Plan
+                # pdf_file.save(UPLOAD_DIR / c.pdf_filename) 
             
             db.session.add(c)
             db.session.commit()
@@ -184,7 +179,7 @@ def cadastrar_empresa():
             form = request.form
             doc_file = request.files.get("doc")
             
-            # CORREÇÃO DO BUG: Não exige senha forte nem validação no cadastro.
+            # A senha será gerada e enviada pelo Admin após a aprovação.
             senha_provisoria = "placeholder_pre_aprovacao"
             
             categorias = ",".join(request.form.getlist("categorias"))
@@ -215,7 +210,8 @@ def cadastrar_empresa():
                     return redirect(request.url)
                 safe = secure_filename(doc_file.filename)
                 e.doc_filename = f"{uuid4().hex}_{safe}"
-                doc_file.save(UPLOAD_DIR / e.doc_filename)
+                # 🔴 CORREÇÃO: Comentar linha para evitar erro de escrita no Render Free Plan
+                # doc_file.save(UPLOAD_DIR / e.doc_filename)
             
             db.session.add(e)
             db.session.commit()
@@ -556,6 +552,56 @@ def admin_empresa_action(_id, acao):
     return redirect(url_for("admin_dashboard"))
 
 
+@app.post("/admin/empresa/<int:_id>/<string:acao>")
+@login_required
+def admin_empresa_action(_id, acao):
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
+    
+    try:
+        e = Empresa.query.get_or_404(_id)
+        
+        if acao == "aprovar":
+            if not e.email_verified:
+                flash("Empresa não verificou o e-mail. Não é possível aprovar.", "warning")
+                return redirect(url_for("admin_dashboard"))
+                
+            e.status = "aprovado"
+            
+            # Gerar e Enviar Senha Temporária
+            if not e.password_hash or e.needs_password_change == False: 
+                temp_password = generate_temp_password()
+                e.set_password(temp_password)
+                e.needs_password_change = True 
+
+                try:
+                    msg = Message(
+                        "Acesso Aprovado e Senha Temporária - Condomínio Blindado",
+                        sender=app.config["MAIL_USERNAME"],
+                        recipients=[e.email_comercial]
+                    )
+                    msg.body = (
+                        f"Parabéns! A empresa {e.nome} foi aprovada.\n\n"
+                        f"Sua senha temporária é: {temp_password}\n"
+                        f"Faça login em {url_for('login', _external=True)} para acessar e **MUDAR SUA SENHA IMEDIATAMENTE**."
+                    )
+                    mail.send(msg)
+                    flash("Aprovação salva. Senha temporária enviada por e-mail.", "success")
+                except Exception as e:
+                    print("Falha ao enviar e-mail de senha temporária:", e)
+                    flash("Aprovação salva, mas houve falha ao enviar o e-mail. Verifique o console.", "warning")
+
+        elif acao == "rejeitar":
+            e.status = "rejeitado"
+            e.needs_password_change = False
+            flash("Empresa rejeitada.", "info")
+            
+        db.session.commit()
+    except Exception as e:
+        flash(f"Erro ao processar ação: {str(e)}", "danger")
+    
+    return redirect(url_for("admin_dashboard"))
+
+
 @app.route("/admin/condominio/<int:_id>")
 @login_required
 def admin_condominio_detalhe(_id):
@@ -598,10 +644,10 @@ def admin_lista_condominios():
         condominios = query.all()
         
     return render_template("admin_lista.html",
-                             itens=condominios,
-                             tipo="condominio",
-                             titulo="Condomínios",
-                             status_filter=status_filter)
+                            itens=condominios,
+                            tipo="condominio",
+                            titulo="Condomínios",
+                            status_filter=status_filter)
 
 @app.route("/admin/empresas")
 @login_required
@@ -621,10 +667,10 @@ def admin_lista_empresas():
         empresas = query.all()
         
     return render_template("admin_lista.html",
-                             itens=empresas,
-                             tipo="empresa",
-                             titulo="Empresas Parceiras",
-                             status_filter=status_filter)
+                            itens=empresas,
+                            tipo="empresa",
+                            titulo="Empresas Parceiras",
+                            status_filter=status_filter)
 
 @app.route("/condominios-certificados")
 def lista_certificados():
@@ -648,6 +694,7 @@ def lista_empresas():
 
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
+    # ATENÇÃO: Esta rota só funcionará se você configurar um CDN ou armazenamento persistente.
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 @app.errorhandler(500)
@@ -663,38 +710,7 @@ def create_tables():
         except Exception as e:
             print(f"❌ Erro ao criar tabelas: {e}")
 
-
-    
-    
-@app.route("/condominio_dashboard", methods=["GET", "POST"])
-@login_required
-def novo_condominio_dashboard():
-    user_id = session.get("user_id")
-    if session.get("user_type") != "condominio" or user_id == "admin":
-        flash("Acesso negado.", "danger")
-        return redirect(url_for("logout"))
-
-    c = Condominio.query.get_or_404(user_id)
-
-    if c.needs_password_change:
-        return redirect(url_for("mudar_senha"))
-
-    # Lógica para upload de documentos (se houver POST)
-    if request.method == "POST":
-        documento = request.files.get("documento")
-        if documento and documento.filename:
-            if allowed_file(documento.filename) and documento.filename.lower().endswith(".pdf"):
-                safe = secure_filename(documento.filename)
-                c.pdf_filename = f"{uuid4().hex}_{safe}"
-                documento.save(UPLOAD_DIR / c.pdf_filename)
-                db.session.commit()
-                flash("Documento enviado com sucesso!", "success")
-            else:
-                flash("Envie um PDF válido.", "warning")
-
-    return render_template("condominio_dashboard.html", c=c)
-
+# O bloco if __name__ é o ponto de entrada local e não é usado pelo Gunicorn/Render.
 if __name__ == "__main__":
-    
+    # Este é o bloco local; a criação de tabelas em produção é feita via 'flask db upgrade'
     app.run(debug=True)
-    
