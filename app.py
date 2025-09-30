@@ -663,10 +663,7 @@ def create_tables():
         except Exception as e:
             print(f"❌ Erro ao criar tabelas: {e}")
 
-if __name__ == "__main__":
-    create_tables()
-    app.run(debug=True)
-    
+
     
     
 @app.route("/condominio_dashboard", methods=["GET", "POST"])
@@ -696,3 +693,8 @@ def novo_condominio_dashboard():
                 flash("Envie um PDF válido.", "warning")
 
     return render_template("condominio_dashboard.html", c=c)
+
+if __name__ == "__main__":
+    
+    app.run(debug=True)
+    
