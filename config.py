@@ -1,5 +1,9 @@
 import os
-from urllib.parse import quote # Mantido, embora não seja estritamente necessário
+from urllib.parse import quote
+from dotenv import load_dotenv
+
+# Garantir que as variáveis de ambiente sejam carregadas, embora já esteja em app.py
+load_dotenv() 
 
 class Config:
     # --- 1. CONFIGURAÇÕES DE APLICAÇÃO ---
@@ -19,16 +23,22 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # --- 3. CREDENCIAIS DE E-MAIL (Flask-Mail) ---
+    # --- 3. CREDENCIAIS DE E-MAIL (Flask-Mail com SendGrid) ---
     
-    # Configurações de Servidor (Lidas do seu .env anterior - GMAIL)
-    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    # O SendGrid usa estas configurações padrão de SMTP:
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.sendgrid.net")
     MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
     MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "True") == "True" 
     
-    # CREDENCIAIS (Lidas do ambiente do Render/OS)
-    MAIL_USERNAME = os.getenv("MAIL_USERNAME", "metad3v25@gmail.com") 
-    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "Sua_App_Password_Aqui") 
+    # No SendGrid, o USERNAME é FIXO como 'apikey'
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME_SMTP", "apikey") 
+    
+    # O PASSWORD é a Chave de API COMPLETA do SendGrid (lida da variável SENDGRID_API_KEY)
+    # NOTA: O Flask-Mail lida com esta chave como a senha.
+    MAIL_PASSWORD = os.getenv("SENDGRID_API_KEY", "SUA_CHAVE_DE_API_DO_SENDGRID_AQUI") 
+
+    # Variável para armazenar o e-mail REMETENTE VERIFICADO (Seu e-mail pessoal para testes)
+    MAIL_USERNAME_SENDER = os.getenv("MAIL_USERNAME_SENDER", "seu.email.teste@gmail.com") 
     
     MAIL_SUPPRESS_SEND = os.getenv("MAIL_SUPPRESS_SEND", "False") == "True"
     

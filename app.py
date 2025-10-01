@@ -145,12 +145,13 @@ def certificar_condominio():
             db.session.commit()
             
             try:
-                if app.config.get("MAIL_USERNAME") and c.email:
+                # 🔴 ATENÇÃO: Alterado de MAIL_USERNAME para MAIL_USERNAME_SENDER (o e-mail verificado)
+                if app.config.get("MAIL_USERNAME_SENDER") and c.email:
                     token = serializer.dumps({"kind": "condominio", "id": c.id})
                     verify_url = url_for("verificar_email", token=token, _external=True)
                     msg = Message(
                         "Confirme seu e-mail - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME"],
+                        sender=app.config["MAIL_USERNAME_SENDER"], # <-- REMETENTE CORRETO AGORA
                         recipients=[c.email]
                     )
                     msg.body = (
@@ -217,12 +218,13 @@ def cadastrar_empresa():
             db.session.commit()
             
             try:
-                if app.config.get("MAIL_USERNAME") and e.email_comercial:
+                # 🔴 ATENÇÃO: Alterado de MAIL_USERNAME para MAIL_USERNAME_SENDER (o e-mail verificado)
+                if app.config.get("MAIL_USERNAME_SENDER") and e.email_comercial:
                     token = serializer.dumps({"kind": "empresa", "id": e.id})
                     verify_url = url_for("verificar_email", token=token, _external=True)
                     msg = Message(
                         "Confirme seu e-mail - Verificação de Empresa",
-                        sender=app.config["MAIL_USERNAME"],
+                        sender=app.config["MAIL_USERNAME_SENDER"], # <-- REMETENTE CORRETO AGORA
                         recipients=[e.email_comercial]
                     )
                     msg.body = (
@@ -477,7 +479,7 @@ def admin_condominio_action(_id, acao):
                 try:
                     msg = Message(
                         "Acesso Aprovado e Senha Temporária - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME"],
+                        sender=app.config["MAIL_USERNAME_SENDER"], # <-- ALTERADO AQUI
                         recipients=[c.email]
                     )
                     msg.body = (
@@ -526,7 +528,7 @@ def admin_empresa_action(_id, acao):
                 try:
                     msg = Message(
                         "Acesso Aprovado e Senha Temporária - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME"],
+                        sender=app.config["MAIL_USERNAME_SENDER"], # <-- ALTERADO AQUI
                         recipients=[e.email_comercial]
                     )
                     msg.body = (

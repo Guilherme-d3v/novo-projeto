@@ -6,3 +6,5 @@ python-dotenv
 itsdangerous
 psycopg2-binary
 gunicorn
+werkzeug
+python-bcrypt
