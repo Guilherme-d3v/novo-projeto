@@ -68,6 +68,22 @@ def login_required(fn):
         return redirect(url_for("login"))
     return _wrap
 
+# Adicione estas rotas logo após a inicialização do app e antes das outras rotas
+@app.route("/blog")
+def blog():
+    return render_template("blog.html")
+
+@app.route("/faq")
+def faq():
+    return render_template("faq.html")
+
+@app.route("/contato", methods=["GET", "POST"])
+def contato():
+    if request.method == "POST":
+        flash("Mensagem enviada com sucesso! Em breve entraremos em contato.", "success")
+        return redirect(url_for("contato"))
+    return render_template("contato.html")
+
 
 @app.route("/")
 def index():
@@ -664,3 +680,4 @@ def create_tables():
 if __name__ == "__main__":
     # Este é o bloco local; a criação de tabelas em produção é feita via 'flask db upgrade'
     app.run(debug=True)
+    
