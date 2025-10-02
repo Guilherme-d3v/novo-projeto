@@ -1,54 +1,54 @@
 {% extends "base.html" %}
 {% block title %}FAQ - Condomínio Blindado{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg my-8">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Perguntas Frequentes</h1>
-    <p class="text-lg text-gray-600 text-center mb-8">
+<div class="w-full bg-white p-4 md:p-8 rounded-lg shadow-lg my-4 md:my-8">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 md:mb-6 text-center">Perguntas Frequentes</h1>
+    <p class="text-base md:text-lg text-gray-600 text-center mb-4 md:mb-8">
         Tire suas dúvidas sobre o Programa Condomínio Blindado.
     </p>
 
     <!-- Lista de perguntas frequentes -->
-    <div class="space-y-6">
+    <div class="space-y-4 md:space-y-6">
         <!-- Pergunta 1 -->
-        <div class="border-b border-gray-200 pb-4">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">O que é o Programa Condomínio Blindado?</h2>
-            <p class="text-gray-700">
+        <div class="border-b border-gray-200 pb-2 md:pb-4">
+            <h2 class="text-lg md:text-xl font-semibold text-gray-800 mb-2">O que é o Programa Condomínio Blindado?</h2>
+            <p class="text-sm md:text-base text-gray-700">
                 O Programa Condomínio Blindado é uma metodologia que ajuda condomínios a implementar 7 pilares de segurança e gestão,
                 garantindo transparência, conformidade legal e proteção contra fraudes.
             </p>
         </div>
 
         <!-- Pergunta 2 -->
-        <div class="border-b border-gray-200 pb-4">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">Como funciona o processo de certificação?</h2>
-            <p class="text-gray-700">
+        <div class="border-b border-gray-200 pb-2 md:pb-4">
+            <h2 class="text-lg md:text-xl font-semibold text-gray-800 mb-2">Como funciona o processo de certificação?</h2>
+            <p class="text-sm md:text-base text-gray-700">
                 O processo inclui 3 etapas: <strong>Diagnóstico</strong> (avaliação das 7 blindagens),
                 <strong>Plano de Ação</strong> (roteiro personalizado) e <strong>Certificação</strong> (auditoria e emissão do selo).
             </p>
         </div>
 
         <!-- Pergunta 3 -->
-        <div class="border-b border-gray-200 pb-4">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">Quais são os níveis de certificação?</h2>
-            <p class="text-gray-700">
+        <div class="border-b border-gray-200 pb-2 md:pb-4">
+            <h2 class="text-lg md:text-xl font-semibold text-gray-800 mb-2">Quais são os níveis de certificação?</h2>
+            <p class="text-sm md:text-base text-gray-700">
                 Oferecemos 3 níveis: <strong>Bronze</strong> (Fundações Sólidas),
                 <strong>Prata</strong> (Gestão Avançada) e <strong>Ouro</strong> (Excelência Total).
             </p>
         </div>
 
         <!-- Pergunta 4 -->
-        <div class="border-b border-gray-200 pb-4">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">Como faço para me cadastrar?</h2>
-            <p class="text-gray-700">
+        <div class="border-b border-gray-200 pb-2 md:pb-4">
+            <h2 class="text-lg md:text-xl font-semibold text-gray-800 mb-2">Como faço para me cadastrar?</h2>
+            <p class="text-sm md:text-base text-gray-700">
                 Basta acessar a página <a href="{{ url_for('certificar_condominio') }}" class="text-blindado-blue hover:underline">Certificar Condomínio</a>
                 e preencher o formulário. Após a verificação do e-mail, sua solicitação será analisada.
             </p>
         </div>
 
         <!-- Pergunta 5 -->
-        <div class="border-b border-gray-200 pb-4">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">Quanto custa para participar?</h2>
-            <p class="text-gray-700">
+        <div class="border-b border-gray-200 pb-2 md:pb-4">
+            <h2 class="text-lg md:text-xl font-semibold text-gray-800 mb-2">Quanto custa para participar?</h2>
+            <p class="text-sm md:text-base text-gray-700">
                 O custo varia de acordo com o tamanho do condomínio e o nível de certificação desejado.
                 Entre em contato para um orçamento personalizado.
             </p>

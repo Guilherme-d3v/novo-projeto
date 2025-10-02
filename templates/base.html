@@ -30,18 +30,25 @@
         .header-shadow {
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+        /* Adicionando classes para responsividade */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
     <!-- Header -->
-    <header class="bg-blindado-blue text-white shadow-lg">
-        <nav class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+    <header class="bg-blindado-blue text-white shadow-lg w-full">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <a href="{{ url_for('index') }}" class="flex items-center space-x-2 mb-4 md:mb-0">
                     <i class="fas fa-shield-alt text-3xl"></i>
                     <span class="text-2xl font-bold">BLINDADO</span>
                 </a>
-                <div class="hidden md:flex space-x-8">
+                <div class="hidden md:flex space-x-4 md:space-x-8 w-full md:w-auto mb-4 md:mb-0">
                     <a href="{{ url_for('index') }}" class="hover:text-blindado-light-blue transition duration-300">Início</a>
                     <a href="#" class="hover:text-blindado-light-blue transition duration-300">Sobre o Programa</a>
                     <a href="#" class="hover:text-blindado-light-blue transition duration-300">Como Funciona</a>
@@ -51,16 +58,14 @@
                     <a href="{{ url_for('faq') }}" class="hover:text-blindado-light-blue transition duration-300">FAQ</a>
                     <a href="{{ url_for('contato') }}" class="hover:text-blindado-light-blue transition duration-300">Contato</a>
                 </div>
-
-
-                <div class="flex space-x-4">
-                    <a href="{{ url_for('cadastrar_empresa') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300">
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 w-full md:w-auto">
+                    <a href="{{ url_for('cadastrar_empresa') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 w-full md:w-auto text-center">
                         Cadastrar Empresa
                     </a>
-                    <a href="{{ url_for('certificar_condominio') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300">
+                    <a href="{{ url_for('certificar_condominio') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 w-full md:w-auto text-center">
                         Certificar Condomínio
                     </a>
-                    <a href="{{ url_for('login') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300">
+                    <a href="{{ url_for('login') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 w-full md:w-auto text-center">
                         Entrar
                     </a>
                 </div>
@@ -69,10 +74,10 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-6 py-8 flex-grow">
+    <main class="container mx-auto px-4 py-8 flex-grow w-full">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="mb-6">
+                <div class="mb-6 w-full">
                     {% for category, message in messages %}
                         <div class="p-4 rounded-lg text-white mb-2 {% if category == 'success' %}bg-green-500{% elif category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% else %}bg-blue-500{% endif %}">
                             {{ message }}
@@ -85,15 +90,15 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-blindado-dark text-white py-8">
-        <div class="container mx-auto px-6">
+    <footer class="bg-blindado-dark text-white py-8 w-full">
+        <div class="container mx-auto px-4">
             <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
                     <i class="fas fa-shield-alt text-2xl"></i>
                     <span class="text-xl font-bold">BLINDADO</span>
                 </div>
-                <div class="mt-4 md:mt-0">
-                    <p class="text-gray-300">© 2025 Condomínio Blindado. Todos os direitos reservados.</p>
+                <div>
+                    <p class="text-gray-300 text-center md:text-right">© 2025 Condomínio Blindado. Todos os direitos reservados.</p>
                 </div>
             </div>
         </div>

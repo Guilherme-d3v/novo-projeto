@@ -89,3 +89,37 @@
     border-color: #1e88e5;
     box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
 }
+
+/* Estilos para responsividade */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Ajustes para inputs e botões */
+input, textarea, select, button {
+    transition: all 0.2s ease;
+}
+
+/* Ajustes para tabelas */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 0.5rem 1rem;
+    text-align: left;
+}
+
+/* Ajustes para cards */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

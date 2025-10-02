@@ -1,75 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Certificar Condomínio{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-lg my-8">
-    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Certificar seu Condomínio</h1>
+<div class="w-full max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-lg shadow-lg my-4 md:my-8">
+    <h1 class="text-2xl md:text-4xl font-bold text-center text-gray-800 mb-4 md:mb-6">Certificar seu Condomínio</h1>
+    <p class="text-base md:text-lg text-center text-gray-600 mb-6 md:mb-8">
+        Preencha o formulário abaixo para iniciar o processo de certificação.
+    </p>
+    <form method="POST" action="{{ url_for('certificar_condominio') }}" enctype="multipart/form-data" class="space-y-4 md:space-y-6">
 
-    <!-- Processo de Certificação -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        <div class="bg-gray-50 p-6 rounded-lg">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Processo de Certificação</h2>
-            <div class="space-y-4">
-                <div class="flex items-start">
-                    <div class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-4">1</div>
-                    <div>
-                        <h3 class="font-semibold text-gray-800">Diagnóstico</h3>
-                        <p class="text-gray-600">Avaliação inicial das 7 blindagens</p>
-                    </div>
-                </div>
-                <div class="flex items-start">
-                    <div class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-4">2</div>
-                    <div>
-                        <h3 class="font-semibold text-gray-800">Plano de Ação</h3>
-                        <p class="text-gray-600">Roteiro personalizado com prazos</p>
-                    </div>
-                </div>
-                <div class="flex items-start">
-                    <div class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-4">3</div>
-                    <div>
-                        <h3 class="font-semibold text-gray-800">Certificação</h3>
-                        <p class="text-gray-600">Auditoria e emissão do selo</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Níveis de Certificação -->
-        <div class="bg-gray-50 p-6 rounded-lg">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Níveis de Certificação</h2>
-            <div class="space-y-4">
-                <div class="p-4 border-2 border-yellow-500 rounded-lg bg-yellow-50">
-                    <h3 class="font-semibold text-yellow-800">Bronze - Fundações Sólidas</h3>
-                </div>
-                <div class="p-4 border-2 border-gray-500 rounded-lg bg-gray-50">
-                    <h3 class="font-semibold text-gray-800">Prata - Gestão Avançada</h3>
-                </div>
-                <div class="p-4 border-2 border-yellow-800 rounded-lg bg-yellow-100">
-                    <h3 class="font-semibold text-yellow-900">Ouro - Excelência Total</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Formulário -->
-    <form method="POST" action="{{ url_for('certificar_condominio') }}" enctype="multipart/form-data" class="space-y-6">
         <!-- Dados do Condomínio -->
-        <div class="bg-gray-50 p-6 rounded-lg mb-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Dados do Condomínio</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-gray-50 p-4 md:p-6 rounded-lg mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-semibold text-gray-700 mb-3 md:mb-4">Dados do Condomínio</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
                     <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">Razão Social / Nome do Condomínio *</label>
-                    <input type="text" id="nome" name="nome" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="text" id="nome" name="nome" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
                 <div>
                     <label for="cnpj" class="block text-sm font-medium text-gray-700 mb-1">CNPJ *</label>
-                    <input type="text" id="cnpj" name="cnpj" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="text" id="cnpj" name="cnpj" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-3 md:mt-6">
                 <div>
                     <label for="tipo" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Condomínio *</label>
-                    <select id="tipo" name="tipo" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
-                        <option value="">Selecione o tipo</option>
+                    <select id="tipo" name="tipo" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
+                        <option value="">Selecione um tipo</option>
                         <option value="residencial">Residencial</option>
                         <option value="comercial">Comercial</option>
                         <option value="misto">Misto</option>
@@ -77,27 +33,27 @@
                 </div>
                 <div>
                     <label for="unidades" class="block text-sm font-medium text-gray-700 mb-1">Número de Unidades *</label>
-                    <input type="number" id="unidades" name="unidades" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="number" id="unidades" name="unidades" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-3 md:mt-6">
                 <div>
                     <label for="cep" class="block text-sm font-medium text-gray-700 mb-1">CEP *</label>
-                    <input type="text" id="cep" name="cep" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="text" id="cep" name="cep" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
                 <div class="md:col-span-2">
                     <label for="endereco" class="block text-sm font-medium text-gray-700 mb-1">Endereço Completo *</label>
-                    <input type="text" id="endereco" name="endereco" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="text" id="endereco" name="endereco" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-3 md:mt-6">
                 <div>
                     <label for="cidade" class="block text-sm font-medium text-gray-700 mb-1">Cidade *</label>
-                    <input type="text" id="cidade" name="cidade" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="text" id="cidade" name="cidade" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
                 <div>
                     <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
-                    <select id="estado" name="estado" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <select id="estado" name="estado" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                         <option value="">UF</option>
                         <option value="AC">AC</option>
                         <option value="AL">AL</option>
@@ -132,29 +88,29 @@
         </div>
 
         <!-- Contato do Síndico/Responsável -->
-        <div class="bg-gray-50 p-6 rounded-lg mb-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Contato do Síndico/Responsável</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-gray-50 p-4 md:p-6 rounded-lg mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-semibold text-gray-700 mb-3 md:mb-4">Contato do Síndico/Responsável</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
                     <label for="contato_nome" class="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
-                    <input type="text" id="contato_nome" name="contato_nome" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="text" id="contato_nome" name="contato_nome" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
-                    <input type="email" id="email" name="email" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="email" id="email" name="email" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-3 md:mt-6">
                 <div>
                     <label for="telefone" class="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
-                    <input type="tel" id="telefone" name="telefone" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300">
+                    <input type="tel" id="telefone" name="telefone" required class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition duration-300 text-sm md:text-base">
                 </div>
             </div>
         </div>
 
         <!-- Botão de Envio -->
-        <div class="flex justify-end">
-            <button type="submit" class="bg-blindado-blue text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
+        <div class="flex justify-end pt-2 md:pt-4">
+            <button type="submit" class="w-full md:w-auto bg-blindado-blue text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-md hover:bg-blindado-dark transition duration-300 text-sm md:text-base">
                 Enviar Solicitação
             </button>
         </div>
