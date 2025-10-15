@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from uuid import uuid4
 from functools import wraps
-import secrets 
+import secrets
 import string
 
 from flask import (
@@ -12,13 +12,15 @@ from flask import (
 from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
-from werkzeug.security import check_password_hash 
+from werkzeug.security import check_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from dotenv import load_dotenv
 
+# Dependências LOCAIS que você precisa garantir que existam
 from models import db, Condominio, Empresa
 from config import Config
-from werkzeug.utils import secure_filename
+# A importação dupla de secure_filename foi removida (não era um erro, mas limpa o código)
+# from werkzeug.utils import secure_filename 
 
 # Carregar variáveis de ambiente PRIMEIRO
 load_dotenv()
@@ -154,8 +156,8 @@ def certificar_condominio():
                     return redirect(request.url)
                 safe = secure_filename(pdf_file.filename)
                 c.pdf_filename = f"{uuid4().hex}_{safe}"
-                # 🔴 CORREÇÃO: Comentar linha para evitar erro de escrita no Render Free Plan
-                # pdf_file.save(UPLOAD_DIR / c.pdf_filename) 
+                # pdf_file.save(UPLOAD_DIR / c.pdf_filename) # 🔴 Linha comentada no seu código original
+
             
             db.session.add(c)
             db.session.commit()
@@ -227,8 +229,7 @@ def cadastrar_empresa():
                     return redirect(request.url)
                 safe = secure_filename(doc_file.filename)
                 e.doc_filename = f"{uuid4().hex}_{safe}"
-                # 🔴 CORREÇÃO: Comentar linha para evitar erro de escrita no Render Free Plan
-                # doc_file.save(UPLOAD_DIR / e.doc_filename)
+                # doc_file.save(UPLOAD_DIR / e.doc_filename) # 🔴 Linha comentada no seu código original
             
             db.session.add(e)
             db.session.commit()
@@ -612,10 +613,10 @@ def admin_lista_condominios():
         condominios = query.all()
         
     return render_template("admin_lista.html",
-                            itens=condominios,
-                            tipo="condominio",
-                            titulo="Condomínios",
-                            status_filter=status_filter)
+                           itens=condominios,
+                           tipo="condominio",
+                           titulo="Condomínios",
+                           status_filter=status_filter)
 
 @app.route("/admin/empresas")
 @login_required
@@ -635,10 +636,10 @@ def admin_lista_empresas():
         empresas = query.all()
         
     return render_template("admin_lista.html",
-                            itens=empresas,
-                            tipo="empresa",
-                            titulo="Empresas Parceiras",
-                            status_filter=status_filter)
+                           itens=empresas,
+                           tipo="empresa",
+                           titulo="Empresas Parceiras",
+                           status_filter=status_filter)
 
 @app.route("/condominios-certificados")
 def lista_certificados():
@@ -677,8 +678,3 @@ def create_tables():
             print("✅ Tabelas criadas com sucesso!")
         except Exception as e:
             print(f"❌ Erro ao criar tabelas: {e}")
-
-# O bloco if __name__ é o ponto de entrada local e não é usado pelo Gunicorn/Render.
-if __name__ == "__main__":
-    # Este é o bloco local; a criação de tabelas em produção é feita via 'flask db upgrade'
-    app.run(debug=True)
