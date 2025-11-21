@@ -41,7 +41,7 @@ class Config:
     MAIL_USERNAME = os.getenv("MAIL_USERNAME", "administrador@condblindado.com.br") 
     
     # Lida do .env (sua senha de email do Hostinger)
-    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "$scrypt$ln=16,r=8,p=1$x7g3JgSgNEYIAaB07t07pw$DE2pXnBC8JjJYwCTjKcfCnJWj3NVaMOVWXpjPi703os") 
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "Sp@ce1200") 
 
     # Variável para armazenar o e-mail REMETENTE VERIFICADO 
     MAIL_USERNAME_SENDER = os.getenv("MAIL_USERNAME_SENDER", "administrador@condblindado.com.br") 
