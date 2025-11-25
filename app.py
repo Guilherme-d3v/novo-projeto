@@ -16,11 +16,13 @@ from werkzeug.security import check_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from dotenv import load_dotenv
 
+# 🌟 NOVO IMPORT DO STRIPE 🌟
+import stripe
+# -----------------------------
+
 # Dependências LOCAIS que você precisa garantir que existam
 from models import db, Condominio, Empresa
 from config import Config
-# A importação dupla de secure_filename foi removida (não era um erro, mas limpa o código)
-# from werkzeug.utils import secure_filename 
 
 # Carregar variáveis de ambiente PRIMEIRO
 load_dotenv()
@@ -43,6 +45,11 @@ migrate = Migrate(app, db)
 mail = Mail(app)
 
 serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+
+# 🌟 INICIALIZAÇÃO DO STRIPE 🌟
+# Configura a chave secreta globalmente para a API
+stripe.api_key = app.config["STRIPE_SECRET_KEY"]
+# -----------------------------
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -156,7 +163,7 @@ def certificar_condominio():
                     return redirect(request.url)
                 safe = secure_filename(pdf_file.filename)
                 c.pdf_filename = f"{uuid4().hex}_{safe}"
-                # pdf_file.save(UPLOAD_DIR / c.pdf_filename) # 🔴 Linha comentada no seu código original
+                # pdf_file.save(UPLOAD_DIR / c.pdf_filename) 
 
             
             db.session.add(c)
@@ -229,7 +236,7 @@ def cadastrar_empresa():
                     return redirect(request.url)
                 safe = secure_filename(doc_file.filename)
                 e.doc_filename = f"{uuid4().hex}_{safe}"
-                # doc_file.save(UPLOAD_DIR / e.doc_filename) # 🔴 Linha comentada no seu código original
+                # doc_file.save(UPLOAD_DIR / e.doc_filename) 
             
             db.session.add(e)
             db.session.commit()
@@ -678,3 +685,148 @@ def create_tables():
             print("✅ Tabelas criadas com sucesso!")
         except Exception as e:
             print(f"❌ Erro ao criar tabelas: {e}")
+
+# ------------------------------------------------------------------------
+# 🌟 NOVAS ROTAS STRIPE 🌟
+# ------------------------------------------------------------------------
+
+@app.route("/create-checkout-session/<int:_id>", methods=["POST"])
+@login_required
+def create_checkout_session(_id):
+    user_type = session.get("user_type")
+    
+    # Validação de segurança: o usuário logado deve ser o proprietário do ID
+    if user_type != "condominio" or session.get("user_id") != _id:
+        flash("Ação não permitida.", "danger")
+        return redirect(url_for("logout"))
+    
+    condominio = Condominio.query.get_or_404(_id)
+    
+    try:
+        # 1. Cria ou recupera o Customer ID do Stripe
+        if not condominio.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=condominio.email,
+                name=condominio.nome,
+                metadata={'condominio_id': condominio.id}
+            )
+            condominio.stripe_customer_id = customer.id
+            db.session.commit()
+        
+        # 2. Cria a Checkout Session
+        checkout_session = stripe.checkout.Session.create(
+            customer=condominio.stripe_customer_id,
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price": app.config["STRIPE_PRICE_ID_MONTHLY"],
+                    "quantity": 1,
+                },
+            ],
+            mode="subscription",
+            # Redirecionamento após sucesso/cancelamento
+            success_url=url_for("success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=url_for("cancel", _external=True),
+        )
+        
+        # Redireciona o usuário para a página de pagamento do Stripe
+        return redirect(checkout_session.url, code=303)
+        
+    except stripe.error.StripeError as e:
+        # Erros específicos do Stripe (ex: chave inválida, preço não existe)
+        flash(f"Erro ao criar sessão de checkout: {str(e)}", "danger")
+        return redirect(url_for("condominio_dashboard"))
+    except Exception as e:
+        # Outros erros de sistema/banco de dados
+        flash(f"Ocorreu um erro inesperado: {str(e)}", "danger")
+        return redirect(url_for("condominio_dashboard"))
+
+
+@app.route("/success")
+@login_required # Garante que apenas um usuário logado acesse
+def success():
+    # Nota: O status final do pagamento é definido pelo Webhook, não por esta rota.
+    flash("Assinatura iniciada com sucesso! Verifique seu dashboard para o status final.", "success")
+    return redirect(url_for("condominio_dashboard"))
+
+@app.route("/cancel")
+@login_required # Garante que apenas um usuário logado acesse
+def cancel():
+    flash("Pagamento cancelado.", "info")
+    return redirect(url_for("condominio_dashboard"))
+
+# 🌟 ROTA CRÍTICA: WEBHOOK 🌟
+@app.route("/stripe-webhook", methods=["POST"])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get("stripe-signature")
+    event = None
+    
+    try:
+        # Verifica se o evento é genuíno do Stripe usando a chave secreta do webhook
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, app.config["STRIPE_WEBHOOK_SECRET"]
+        )
+    except ValueError as e:
+        # Payload inválido
+        print(f"Erro do Webhook: Payload inválido: {e}")
+        return "Payload inválido", 400
+    except stripe.error.SignatureVerificationError as e:
+        # Assinatura inválida
+        print(f"Erro do Webhook: Assinatura inválida: {e}")
+        return "Assinatura inválida", 400
+
+    # ------------------------------------
+    # Processamento dos Tipos de Eventos
+    # ------------------------------------
+    
+    if event["type"] == "checkout.session.completed":
+        # O cliente concluiu a compra.
+        session_data = event["data"]["object"]
+        customer_id = session_data.get("customer")
+        subscription_id = session_data.get("subscription")
+        
+        condominio = Condominio.query.filter_by(stripe_customer_id=customer_id).first()
+        
+        if condominio and subscription_id:
+            condominio.stripe_subscription_id = subscription_id
+            # Definimos como 'active' se o pagamento for imediato, ou 'trialing'
+            # Se for um trial, os próximos webhooks ajustarão o status.
+            condominio.subscription_status = "active" 
+            db.session.commit()
+            print(f"✅ Assinatura criada para Condomínio ID {condominio.id}")
+            
+    elif event["type"] in ["customer.subscription.updated", "customer.subscription.deleted"]:
+        # Mudança no status da assinatura (cancelada, expirada, etc.)
+        subscription = event["data"]["object"]
+        customer_id = subscription.get("customer")
+        
+        condominio = Condominio.query.filter_by(stripe_customer_id=customer_id).first()
+
+        if condominio:
+            condominio.subscription_status = subscription.get("status")
+            db.session.commit()
+            print(f"⚠️ Status da Assinatura atualizado para Condomínio ID {condominio.id}: {condominio.subscription_status}")
+
+    elif event["type"] == "invoice.payment_succeeded":
+        # O Stripe confirmou que um pagamento recorrente foi processado com sucesso
+        invoice = event["data"]["object"]
+        customer_id = invoice.get("customer")
+        
+        condominio = Condominio.query.filter_by(stripe_customer_id=customer_id).first()
+        
+        if condominio:
+            # Garante que o status esteja como ativo após um pagamento mensal
+            condominio.subscription_status = "active"
+            db.session.commit()
+            print(f"💰 Pagamento recorrente bem-sucedido para Condomínio ID {condominio.id}")
+
+    # Retorne um response para o Stripe para confirmar o recebimento
+    return "", 200
+
+# ------------------------------------------------------------------------
+# FIM DAS NOVAS ROTAS STRIPE 
+# ------------------------------------------------------------------------
+
+# if __name__ == "__main__":
+#     app.run(debug=True)

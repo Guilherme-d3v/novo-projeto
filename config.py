@@ -53,3 +53,9 @@ class Config:
     # Lidas do ambiente do Render/OS
     ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@condominio.com") 
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD", "scrypt:32768:8:1$YXCQXRQWE8Oaiqut$44452ef6ceaae5888045a13e18a6524252e1b4de33b320989a12ed04a3314a8dfae9f1a659ba692a851a26744179ceaea253999e2a60baa8338109d1bd1a1b03")
+    
+    # --- 5. CONFIGURAÇÕES STRIPE ---
+    STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "pk_test_...")
+    STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_...")
+    STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_...")
+    STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY", "price_...")

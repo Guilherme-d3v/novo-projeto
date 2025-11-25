@@ -5,6 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 db = SQLAlchemy()
 
 class Condominio(db.Model):
+    
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(200), nullable=False)
     cnpj = db.Column(db.String(18), nullable=False)
@@ -28,6 +29,12 @@ class Condominio(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     password_hash = db.Column(db.String(128), nullable=True) 
+    
+    # 🌟 NOVOS CAMPOS PARA STRIPE 🌟
+    stripe_customer_id = db.Column(db.String(120), nullable=True, unique=True)
+    stripe_subscription_id = db.Column(db.String(120), nullable=True, unique=True)
+    subscription_status = db.Column(db.String(50), default='inativo') # active, past_due, canceled, inativo
+    # 🌟 FIM DOS NOVOS CAMPOS PARA STRIPE 🌟
     
     # NOVO CAMPO: Indica se o usuário precisa trocar a senha na próxima vez que logar
     needs_password_change = db.Column(db.Boolean, default=False) 
