@@ -255,6 +255,7 @@ def cadastrar_empresa():
                         "Confirme seu e-mail - Verificação de Empresa",
                         sender=app.config["MAIL_USERNAME_SENDER"], # <-- REMETENTE CORRETO AGORA
                         recipients=[e.email_comercial]
+                        charset='utf-8'
                     )
                     msg.body = (
                         f"Olá, recebemos o cadastro da empresa {e.nome}.\n"
