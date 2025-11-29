@@ -37,7 +37,7 @@ class Condominio(db.Model):
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    password_hash = db.Column(db.String(128), nullable=True) 
+    password_hash = db.Column(db.String(256), nullable=True) 
     
     # 🌟 NOVOS CAMPOS PARA STRIPE 🌟
     stripe_customer_id = db.Column(db.String(120), nullable=True, unique=True)
@@ -80,7 +80,7 @@ class Empresa(db.Model):
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    password_hash = db.Column(db.String(128), nullable=True) 
+    password_hash = db.Column(db.String(256), nullable=True) 
     
     # NOVO CAMPO: Indica se o usuário precisa trocar a senha na próxima vez que logar
     needs_password_change = db.Column(db.Boolean, default=False) 
