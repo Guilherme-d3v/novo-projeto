@@ -174,11 +174,16 @@ def certificar_condominio():
                 if app.config.get("MAIL_USERNAME_SENDER") and c.email:
                     token = serializer.dumps({"kind": "condominio", "id": c.id})
                     verify_url = url_for("verificar_email", token=token, _external=True)
+                    
+                    
                     msg = Message(
                         "Confirme seu e-mail - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME_SENDER"], # <-- REMETENTE CORRETO AGORA
-                        recipients=[c.email]
+                        sender=app.config["MAIL_USERNAME_SENDER"], 
+                        recipients=[c.email],
+                        charset='utf-8'  
                     )
+                    
+
                     msg.body = (
                         f"Olá {c.contato_nome or ''},\n\n"
                         f"Recebemos sua solicitação para certificar o condomínio {c.nome}.\n"
