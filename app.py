@@ -253,8 +253,8 @@ def cadastrar_empresa():
                     verify_url = url_for("verificar_email", token=token, _external=True)
                     msg = Message(
                         "Confirme seu e-mail - Verificação de Empresa",
-                        sender=app.config["MAIL_USERNAME_SENDER"], # <-- REMETENTE CORRETO AGORA
-                        recipients=[e.email_comercial]
+                        sender=app.config["MAIL_USERNAME_SENDER"], 
+                        recipients=[e.email_comercial],
                         charset='utf-8'
                     )
                     msg.body = (
