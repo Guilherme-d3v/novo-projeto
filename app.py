@@ -21,7 +21,7 @@ import stripe
 # -----------------------------
 
 # Dependências LOCAIS que você precisa garantir que existam
-from models import db, Condominio, Empresa
+from models import db, Condominio, Empresa, CondominioRank
 from config import Config
 
 # Carregar variáveis de ambiente PRIMEIRO
@@ -497,6 +497,21 @@ def admin_condominio_action(_id, acao):
             if not c.email_verified:
                 flash("Condomínio não verificou o e-mail. Não é possível aprovar.", "warning")
                 return redirect(url_for("admin_dashboard"))
+            
+            # Get rank from form data
+            selected_rank_str = request.form.get("rank")
+            
+            if not selected_rank_str:
+                flash("É necessário selecionar um rank para aprovar o condomínio.", "danger")
+                return redirect(url_for("admin_dashboard")) # Or redirect to the detail page
+            
+            try:
+                # Convert string to CondominioRank enum member
+                selected_rank = CondominioRank[selected_rank_str.upper()] 
+                c.rank = selected_rank
+            except KeyError:
+                flash("Rank inválido selecionado.", "danger")
+                return redirect(url_for("admin_dashboard")) # Or redirect to the detail page
                 
             c.status = "aprovado"
             
@@ -513,19 +528,21 @@ def admin_condominio_action(_id, acao):
                         recipients=[c.email]
                     )
                     msg.body = (
-                        f"Parabéns! O condomínio {c.nome} foi aprovado.\n\n"
+                        f"Parabéns! O condomínio {c.nome} (Rank: {c.rank.value.capitalize()}) foi aprovado.\n\n" # Added rank to email
                         f"Sua senha temporária é: {temp_password}\n"
                         f"Faça login em {url_for('login', _external=True)} para acessar e **MUDAR SUA SENHA IMEDIATAMENTE**."
                     )
                     mail.send(msg)
-                    flash("Aprovação salva. Senha temporária enviada por e-mail.", "success")
+                    flash(f"Aprovação salva. Rank {c.rank.value.capitalize()} atribuído. Senha temporária enviada por e-mail.", "success") # Updated flash message
                 except Exception as e:
                     print("Falha ao enviar e-mail de senha temporária:", e)
-                    flash("Aprovação salva, mas houve falha ao enviar o e-mail. Verifique o console.", "warning")
+                    flash(f"Aprovação salva. Rank {c.rank.value.capitalize()} atribuído, mas houve falha ao enviar o e-mail. Verifique o console.", "warning") # Updated flash message
 
         elif acao == "rejeitar":
             c.status = "rejeitado"
             c.needs_password_change = False
+            # If rejected, remove any assigned rank
+            c.rank = None 
             flash("Condomínio rejeitado.", "info")
             
         db.session.commit()
@@ -829,6 +846,36 @@ def stripe_webhook():
 
     # Retorne um response para o Stripe para confirmar o recebimento
     return "", 200
+
+@app.post("/admin/condominio/<int:_id>/edit-rank")
+@login_required
+def admin_edit_condominio_rank(_id):
+    if session.get("user_type") != "admin":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    c = Condominio.query.get_or_404(_id)
+    new_rank_str = request.form.get("rank")
+
+    if not new_rank_str:
+        flash("Nenhum rank foi selecionado.", "danger")
+        return redirect(url_for("admin_condominio_detalhe", _id=_id))
+
+    try:
+        # Convert string to CondominioRank enum member
+        new_rank = CondominioRank[new_rank_str.upper()]
+        
+        if c.rank == new_rank:
+            flash(f"O condomínio já possui o rank {new_rank.value.capitalize()}.", "info")
+        else:
+            c.rank = new_rank
+            db.session.commit()
+            flash(f"Rank do condomínio atualizado para {new_rank.value.capitalize()}.", "success")
+
+    except KeyError:
+        flash("Rank inválido selecionado.", "danger")
+    
+    return redirect(url_for("admin_condominio_detalhe", _id=_id))
 
 # ------------------------------------------------------------------------
 # FIM DAS NOVAS ROTAS STRIPE 

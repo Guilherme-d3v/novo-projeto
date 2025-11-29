@@ -1,8 +1,17 @@
+import enum
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import check_password_hash, generate_password_hash 
+from werkzeug.security import check_password_hash, generate_password_hash
+from sqlalchemy.dialects.postgresql import ENUM
 
 db = SQLAlchemy()
+
+# Define the CondominioRank Enum
+class CondominioRank(enum.Enum):
+    BRONZE = "bronze"
+    PRATA = "prata"
+    OURO = "ouro"
+    DIAMANTE = "diamante"
 
 class Condominio(db.Model):
     
@@ -39,6 +48,9 @@ class Condominio(db.Model):
     # NOVO CAMPO: Indica se o usuário precisa trocar a senha na próxima vez que logar
     needs_password_change = db.Column(db.Boolean, default=False) 
 
+    # Novo campo para o ranking
+    rank = db.Column(ENUM(CondominioRank, name="condominiorank", schema="public"), nullable=True) # Rank assigned on approval
+    
     def set_password(self, password):
         """Hashea e salva a senha."""
         self.password_hash = generate_password_hash(password) 

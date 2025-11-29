@@ -42,8 +42,18 @@ Visualizar PDF
 
 <div class="mt-8 flex justify-end space-x-4">
     {% if c.status in ['pendente', 'verificado'] %}
-    <form action="{{ url_for('admin_condominio_action', _id=c.id, acao='aprovar') }}" method="post" class="inline-block">
-        <button type="submit" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+    <form action="{{ url_for('admin_condominio_action', _id=c.id, acao='aprovar') }}" method="post" class="w-full md:w-auto">
+        <div class="mb-4">
+            <label for="rank" class="block font-semibold text-gray-700">Atribuir Rank:</label>
+            <select name="rank" id="rank" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <option value="">-- Selecione um Rank --</option>
+                <option value="bronze">Bronze</option>
+                <option value="prata">Prata</option>
+                <option value="ouro">Ouro</option>
+                <option value="diamante">Diamante</option>
+            </select>
+        </div>
+        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
             Aprovar
         </button>
     </form>
@@ -52,6 +62,29 @@ Visualizar PDF
             Rejeitar
         </button>
     </form>
+    {% endif %}
+
+    <!-- Seção para editar o Rank se já aprovado -->
+    {% if c.status == 'aprovado' %}
+    <div class="mt-8 border-t pt-6">
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Editar Rank</h3>
+        <p class="mb-2 text-gray-700">Rank Atual: <span class="font-bold">{{ c.rank.value.capitalize() if c.rank else 'N/A' }}</span></p>
+        
+        <form action="{{ url_for('admin_edit_condominio_rank', _id=c.id) }}" method="post" class="flex items-end space-x-4">
+            <div class="flex-grow">
+                <label for="rank-edit" class="block font-semibold text-gray-700">Novo Rank:</label>
+                <select name="rank" id="rank-edit" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="bronze" {% if c.rank and c.rank.name == 'BRONZE' %}selected{% endif %}>Bronze</option>
+                    <option value="prata" {% if c.rank and c.rank.name == 'PRATA' %}selected{% endif %}>Prata</option>
+                    <option value="ouro" {% if c.rank and c.rank.name == 'OURO' %}selected{% endif %}>Ouro</option>
+                    <option value="diamante" {% if c.rank and c.rank.name == 'DIAMANTE' %}selected{% endif %}>Diamante</option>
+                </select>
+            </div>
+            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
+                Atualizar Rank
+            </button>
+        </form>
+    </div>
     {% endif %}
 </div>
 
