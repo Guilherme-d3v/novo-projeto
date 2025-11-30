@@ -26,7 +26,7 @@
     <div class="mt-8 md:mt-12 text-center">
         <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Listas Detalhadas</h2>
         <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
-            <a href="{{ url_for('admin_lista_condominios', status='aprovado') }}" class="bg-green-500 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-md hover:bg-green-600 transition duration-300 text-sm md:text-base">
+            <a href="{{ url_for('admin_lista_condominios', status=UserStatus.APROVADO) }}" class="bg-green-500 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-md hover:bg-green-600 transition duration-300 text-sm md:text-base">
                 Condomínios Aprovados
             </a>
             <a href="{{ url_for('admin_lista_condominios', status='rejeitado') }}" class="bg-red-500 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-md hover:bg-red-600 transition duration-300 text-sm md:text-base">
@@ -34,7 +34,7 @@
             </a>
         </div>
         <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4 mt-2 md:mt-4">
-            <a href="{{ url_for('admin_lista_empresas', status='aprovado') }}" class="bg-green-500 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-md hover:bg-green-600 transition duration-300 text-sm md:text-base">
+            <a href="{{ url_for('admin_lista_empresas', status=UserStatus.APROVADO) }}" class="bg-green-500 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-md hover:bg-green-600 transition duration-300 text-sm md:text-base">
                 Empresas Aprovadas
             </a>
             <a href="{{ url_for('admin_lista_empresas', status='rejeitado') }}" class="bg-red-500 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg shadow-md hover:bg-red-600 transition duration-300 text-sm md:text-base">

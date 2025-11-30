@@ -16,6 +16,7 @@ class UserStatus(enum.Enum):
     ATIVO = "ativo"
     SUSPENSO = "suspenso"
     PENDENTE = "pendente"
+    APROVADO = "aprovado"
 
 class Condominio(db.Model):
     

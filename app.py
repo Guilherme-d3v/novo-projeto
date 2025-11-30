@@ -97,7 +97,7 @@ def contato():
 @app.route("/")
 def index():
     try:
-        condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.created_at.desc()).limit(8).all()
+        condominios = Condominio.query.filter_by(status=UserStatus.APROVADO).order_by(Condominio.created_at.desc()).limit(8).all()
     except Exception as e:
         # Se a tabela ainda não existe (no primeiro load), esta exceção evita o crash.
         print(f"Erro ao carregar condomínios: {e}") 
@@ -507,7 +507,7 @@ def admin_condominio_action(_id, acao):
                 flash("Rank inválido selecionado.", "danger")
                 return redirect(url_for("admin_dashboard")) # Or redirect to the detail page
                 
-            c.status = "aprovado"
+            c.status = UserStatus.APROVADO
             
             # Gerar e Enviar Senha Temporária
             if not c.password_hash or c.needs_password_change == False: 
@@ -558,7 +558,7 @@ def admin_empresa_action(_id, acao):
                 flash("Empresa não verificou o e-mail. Não é possível aprovar.", "warning")
                 return redirect(url_for("admin_dashboard"))
                 
-            e.status = "aprovado"
+            e.status = UserStatus.APROVADO
             
             # Gerar e Enviar Senha Temporária
             if not e.password_hash or e.needs_password_change == False: 
@@ -699,7 +699,7 @@ def admin_lista_condominios():
     if status_filter == "pendente":
         condominios = query.filter(Condominio.status.in_(["pendente", "verificado"])).all()
     elif status_filter == "aprovado":
-        condominios = query.filter(Condominio.status == "aprovado").all()
+        condominios = query.filter(Condominio.status == UserStatus.APROVADO).all()
     elif status_filter == "rejeitado":
         condominios = query.filter(Condominio.status == "rejeitado").all()
     else:
@@ -722,7 +722,7 @@ def admin_lista_empresas():
     if status_filter == "pendente":
         empresas = query.filter(Empresa.status.in_(["pendente", "verificado"])).all()
     elif status_filter == "aprovado":
-        empresas = query.filter(Empresa.status == "aprovado").all()
+        empresas = query.filter(Empresa.status == UserStatus.APROVADO).all()
     elif status_filter == "rejeitado":
         empresas = query.filter(Empresa.status == "rejeitado").all()
     else:
@@ -737,7 +737,7 @@ def admin_lista_empresas():
 @app.route("/condominios-certificados")
 def lista_certificados():
     try:
-        condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.nome).all()
+        condominios = Condominio.query.filter_by(status=UserStatus.APROVADO).order_by(Condominio.nome).all()
     except Exception as e:
         print(f"Erro ao listar certificados: {e}")
         condominios = []
@@ -747,7 +747,7 @@ def lista_certificados():
 @app.route("/empresas-parceiras")
 def lista_empresas():
     try:
-        empresas = Empresa.query.filter_by(status="aprovado").order_by(Empresa.nome).all()
+        empresas = Empresa.query.filter_by(status=UserStatus.APROVADO).order_by(Empresa.nome).all()
     except Exception as e:
         print(f"Erro ao listar empresas: {e}")
         empresas = []
