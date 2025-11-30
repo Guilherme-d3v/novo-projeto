@@ -6,7 +6,7 @@
         <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Lista de {{ titulo }}</h2>
         <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mt-4 md:mt-0">
             <a href="{{ url_for('admin_lista_' + ('condominios' if tipo == 'condominio' else 'empresas'), status='pendente') }}" class="px-3 md:px-4 py-2 rounded-lg font-semibold {% if status_filter == 'pendente' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} text-sm md:text-base">Pendentes</a>
-            <a href="{{ url_for('admin_lista_' + ('condominios' if tipo == 'condominio' else 'empresas'), status=UserStatus.APROVADO) }}" class="px-3 md:px-4 py-2 rounded-lg font-semibold {% if status_filter == 'aprovado' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} text-sm md:text-base">Aprovados</a>
+            <a href="{{ url_for('admin_lista_' + ('condominios' if tipo == 'condominio' else 'empresas'), status='aprovado') }}" class="px-3 md:px-4 py-2 rounded-lg font-semibold {% if status_filter == 'aprovado' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} text-sm md:text-base">Aprovados</a>
             <a href="{{ url_for('admin_lista_' + ('condominios' if tipo == 'condominio' else 'empresas'), status='rejeitado') }}" class="px-3 md:px-4 py-2 rounded-lg font-semibold {% if status_filter == 'rejeitado' %}bg-red-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} text-sm md:text-base">Rejeitados</a>
         </div>
     </div>
@@ -27,7 +27,7 @@
                         <td class="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap text-sm md:text-base font-medium text-gray-900">{{ item.nome }}</td>
                         <td class="px-3 md:px-6 py-2 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                {% if item.status == UserStatus.APROVADO %}bg-green-100 text-green-800
+                                {% if item.status == 'aprovado' %}bg-green-100 text-green-800
                                 {% elif item.status == 'rejeitado' %}bg-red-100 text-red-800
                                 {% elif item.status == 'verificado' %}bg-blue-100 text-blue-800
                                 {% else %}bg-gray-100 text-gray-800{% endif %}">

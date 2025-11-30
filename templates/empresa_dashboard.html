@@ -8,7 +8,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-8">
         <div class="bg-blindado-light-blue p-4 md:p-6 rounded-lg">
             <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2 md:mb-4">Status do Cadastro</h2>
-            <p class="text-base md:text-lg {{ 'text-green-600' if e.status == UserStatus.APROVADO else 'text-yellow-600' if e.status == 'verificado' else 'text-gray-600' }}">
+            <p class="text-base md:text-lg {{ 'text-green-600' if e.status == 'aprovado' else 'text-yellow-600' if e.status == 'verificado' else 'text-gray-600' }}">
                 {{ e.status|upper }}
             </p>
         </div>
