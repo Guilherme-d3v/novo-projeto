@@ -21,7 +21,7 @@ import stripe
 # -----------------------------
 
 # Dependências LOCAIS que você precisa garantir que existam
-from models import db, Condominio, Empresa, CondominioRank, UserStatus
+from models import db, Condominio, Empresa, CondominioRank
 from config import Config
 
 # Carregar variáveis de ambiente PRIMEIRO
@@ -97,7 +97,7 @@ def contato():
 @app.route("/")
 def index():
     try:
-        condominios = Condominio.query.filter_by(status=UserStatus.APROVADO).order_by(Condominio.created_at.desc()).limit(8).all()
+        condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.created_at.desc()).limit(8).all()
     except Exception as e:
         # Se a tabela ainda não existe (no primeiro load), esta exceção evita o crash.
         print(f"Erro ao carregar condomínios: {e}") 
@@ -335,8 +335,8 @@ def login():
         # 2. Tentar Login como CONDOMÍNIO
         condominio = Condominio.query.filter_by(email=email).first()
         if condominio and condominio.check_password(senha):
-            if condominio.status != UserStatus.ATIVO:
-                flash(f"O acesso para o condomínio '{condominio.nome}' está {condominio.status.value}. Contate o administrador.", "warning")
+            if not condominio.is_active:
+                flash(f"O acesso para o condomínio '{condominio.nome}' está suspenso. Contate o administrador.", "warning")
                 return redirect(url_for("login"))
 
             session.clear()
@@ -353,8 +353,8 @@ def login():
         # 3. Tentar Login como EMPRESA
         empresa = Empresa.query.filter_by(email_comercial=email).first()
         if empresa and empresa.check_password(senha):
-            if empresa.status != UserStatus.ATIVO:
-                flash(f"O acesso para a empresa '{empresa.nome}' está {empresa.status.value}. Contate o administrador.", "warning")
+            if not empresa.is_active:
+                flash(f"O acesso para a empresa '{empresa.nome}' está suspenso. Contate o administrador.", "warning")
                 return redirect(url_for("login"))
 
             session.clear()
@@ -507,7 +507,7 @@ def admin_condominio_action(_id, acao):
                 flash("Rank inválido selecionado.", "danger")
                 return redirect(url_for("admin_dashboard")) # Or redirect to the detail page
                 
-            c.status = UserStatus.APROVADO
+            c.status = "aprovado"
             
             # Gerar e Enviar Senha Temporária
             if not c.password_hash or c.needs_password_change == False: 
@@ -558,7 +558,7 @@ def admin_empresa_action(_id, acao):
                 flash("Empresa não verificou o e-mail. Não é possível aprovar.", "warning")
                 return redirect(url_for("admin_dashboard"))
                 
-            e.status = UserStatus.APROVADO
+            e.status = "aprovado"
             
             # Gerar e Enviar Senha Temporária
             if not e.password_hash or e.needs_password_change == False: 
@@ -620,71 +620,129 @@ def admin_empresa_detalhe(_id):
     return render_template("admin_empresa_detalhe.html", e=empresa)
 
 
-@app.post("/admin/empresa/<int:_id>/edit-status")
+@app.post("/admin/condominio/<int:_id>/set-active")
 @login_required
-def admin_edit_empresa_status(_id):
+def admin_set_active_condominio(_id):
+    if session.get("user_type") != "admin":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    c = Condominio.query.get_or_404(_id)
+    is_active_str = request.form.get("is_active")
+    
+    if is_active_str is None:
+        flash("Nenhuma ação selecionada.", "danger")
+        return redirect(url_for("admin_condominio_detalhe", _id=_id))
+
+    is_active = is_active_str.lower() == 'true'
+    
+    if c.is_active == is_active:
+        flash(f"O status do condomínio já é {'ativo' if is_active else 'suspenso'}.", "info")
+    else:
+        c.is_active = is_active
+        db.session.commit()
+        flash(f"Status do condomínio atualizado para {'ativo' if is_active else 'suspenso'}.", "success")
+
+        if not is_active:
+            try:
+                msg = Message(
+                    "Sua conta foi temporariamente suspensa - Condomínio Blindado",
+                    sender=app.config["MAIL_USERNAME_SENDER"],
+                    recipients=[c.email]
+                )
+                msg.body = (
+                    f"Olá {c.contato_nome},\n\n"
+                    f"Sua conta para o condomínio {c.nome} foi temporariamente suspensa por um administrador.\n"
+                    "Estamos investigando o caso. Se você acredita que isso é um engano ou precisa de mais informações, "
+                    "por favor, entre em contato conosco pelo e-mail: administrador@condblindado.com.br\n\n"
+                    "Atenciosamente,\nEquipe Condomínio Blindado"
+                )
+                mail.send(msg)
+                flash("E-mail de notificação de suspensão enviado ao usuário.", "info")
+            except Exception as e:
+                print(f"Falha ao enviar e-mail de suspensão: {e}")
+                flash("Houve uma falha ao enviar o e-mail de notificação de suspensão. Verifique o console.", "warning")
+        else:
+            try:
+                msg = Message(
+                    "Sua conta foi reativada - Condomínio Blindado",
+                    sender=app.config["MAIL_USERNAME_SENDER"],
+                    recipients=[c.email]
+                )
+                msg.body = (
+                    f"Olá {c.contato_nome},\n\n"
+                    f"Boas notícias! Sua conta para o condomínio {c.nome} foi reativada.\n"
+                    "Você já pode acessar o sistema normalmente.\n\n"
+                    "Atenciosamente,\nEquipe Condomínio Blindado"
+                )
+                mail.send(msg)
+                flash("E-mail de notificação de reativação enviado ao usuário.", "info")
+            except Exception as e:
+                print(f"Falha ao enviar e-mail de reativação: {e}")
+                flash("Houve uma falha ao enviar o e-mail de notificação de reativação. Verifique o console.", "warning")
+
+    return redirect(url_for("admin_condominio_detalhe", _id=_id))
+
+@app.post("/admin/empresa/<int:_id>/set-active")
+@login_required
+def admin_set_active_empresa(_id):
     if session.get("user_type") != "admin":
         flash("Acesso restrito.", "danger")
         return redirect(url_for("logout"))
 
     e = Empresa.query.get_or_404(_id)
-    old_status = e.status
-    new_status_str = request.form.get("status")
+    is_active_str = request.form.get("is_active")
 
-    if not new_status_str:
-        flash("Nenhum status foi selecionado.", "danger")
+    if is_active_str is None:
+        flash("Nenhuma ação selecionada.", "danger")
         return redirect(url_for("admin_empresa_detalhe", _id=_id))
 
-    try:
-        new_status = UserStatus[new_status_str.upper()]
-        
-        if e.status == new_status:
-            flash(f"A empresa já possui o status {new_status.value}.", "info")
+    is_active = is_active_str.lower() == 'true'
+    
+    if e.is_active == is_active:
+        flash(f"O status da empresa já é {'ativo' if is_active else 'suspenso'}.", "info")
+    else:
+        e.is_active = is_active
+        db.session.commit()
+        flash(f"Status da empresa atualizado para {'ativo' if is_active else 'suspenso'}.", "success")
+
+        if not is_active:
+            try:
+                msg = Message(
+                    "Sua conta foi temporariamente suspensa - Condomínio Blindado",
+                    sender=app.config["MAIL_USERNAME_SENDER"],
+                    recipients=[e.email_comercial]
+                )
+                msg.body = (
+                    f"Olá {e.nome},\n\n"
+                    f"Sua conta de empresa foi temporariamente suspensa por um administrador.\n"
+                    "Estamos investigando o caso. Se você acredita que isso é um engano ou precisa de mais informações, "
+                    "por favor, entre em contato conosco pelo e-mail: administrador@condblindado.com.br\n\n"
+                    "Atenciosamente,\nEquipe Condomínio Blindado"
+                )
+                mail.send(msg)
+                flash("E-mail de notificação de suspensão enviado ao usuário.", "info")
+            except Exception as ex:
+                print(f"Falha ao enviar e-mail de suspensão: {ex}")
+                flash("Houve uma falha ao enviar o e-mail de notificação de suspensão. Verifique o console.", "warning")
         else:
-            e.status = new_status
-            db.session.commit()
-            flash(f"Status da empresa atualizado para {new_status.value}.", "success")
-
-            if new_status == UserStatus.SUSPENSO:
-                try:
-                    msg = Message(
-                        "Sua conta foi temporariamente suspensa - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME_SENDER"],
-                        recipients=[e.email_comercial]
-                    )
-                    msg.body = (
-                        f"Olá {e.nome},\n\n"
-                        f"Sua conta de empresa foi temporariamente suspensa por um administrador.\n"
-                        "Estamos investigando o caso. Se você acredita que isso é um engano ou precisa de mais informações, "
-                        "por favor, entre em contato conosco pelo e-mail: administrador@condblindado.com.br\n\n"
-                        "Atenciosamente,\nEquipe Condomínio Blindado"
-                    )
-                    mail.send(msg)
-                    flash("E-mail de notificação de suspensão enviado ao usuário.", "info")
-                except Exception as ex:
-                    print(f"Falha ao enviar e-mail de suspensão: {ex}")
-                    flash("Houve uma falha ao enviar o e-mail de notificação de suspensão. Verifique o console.", "warning")
-            elif old_status == UserStatus.SUSPENSO and new_status == UserStatus.ATIVO:
-                try:
-                    msg = Message(
-                        "Sua conta foi reativada - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME_SENDER"],
-                        recipients=[e.email_comercial]
-                    )
-                    msg.body = (
-                        f"Olá {e.nome},\n\n"
-                        f"Boas notícias! Sua conta de empresa foi reativada.\n"
-                        "Você já pode acessar o sistema normalmente.\n\n"
-                        "Atenciosamente,\nEquipe Condomínio Blindado"
-                    )
-                    mail.send(msg)
-                    flash("E-mail de notificação de reativação enviado ao usuário.", "info")
-                except Exception as ex:
-                    print(f"Falha ao enviar e-mail de reativação: {ex}")
-                    flash("Houve uma falha ao enviar o e-mail de notificação de reativação. Verifique o console.", "warning")
-
-    except KeyError:
-        flash("Status inválido selecionado.", "danger")
+            try:
+                msg = Message(
+                    "Sua conta foi reativada - Condomínio Blindado",
+                    sender=app.config["MAIL_USERNAME_SENDER"],
+                    recipients=[e.email_comercial]
+                )
+                msg.body = (
+                    f"Olá {e.nome},\n\n"
+                    f"Boas notícias! Sua conta de empresa foi reativada.\n"
+                    "Você já pode acessar o sistema normalmente.\n\n"
+                    "Atenciosamente,\nEquipe Condomínio Blindado"
+                )
+                mail.send(msg)
+                flash("E-mail de notificação de reativação enviado ao usuário.", "info")
+            except Exception as ex:
+                print(f"Falha ao enviar e-mail de reativação: {ex}")
+                flash("Houve uma falha ao enviar o e-mail de notificação de reativação. Verifique o console.", "warning")
     
     return redirect(url_for("admin_empresa_detalhe", _id=_id))
 
@@ -699,7 +757,7 @@ def admin_lista_condominios():
     if status_filter == "pendente":
         condominios = query.filter(Condominio.status.in_(["pendente", "verificado"])).all()
     elif status_filter == "aprovado":
-        condominios = query.filter(Condominio.status == UserStatus.APROVADO).all()
+        condominios = query.filter(Condominio.status == "aprovado").all()
     elif status_filter == "rejeitado":
         condominios = query.filter(Condominio.status == "rejeitado").all()
     else:
@@ -722,7 +780,7 @@ def admin_lista_empresas():
     if status_filter == "pendente":
         empresas = query.filter(Empresa.status.in_(["pendente", "verificado"])).all()
     elif status_filter == "aprovado":
-        empresas = query.filter(Empresa.status == UserStatus.APROVADO).all()
+        empresas = query.filter(Empresa.status == "aprovado").all()
     elif status_filter == "rejeitado":
         empresas = query.filter(Empresa.status == "rejeitado").all()
     else:
@@ -737,7 +795,7 @@ def admin_lista_empresas():
 @app.route("/condominios-certificados")
 def lista_certificados():
     try:
-        condominios = Condominio.query.filter_by(status=UserStatus.APROVADO).order_by(Condominio.nome).all()
+        condominios = Condominio.query.filter_by(status="aprovado").order_by(Condominio.nome).all()
     except Exception as e:
         print(f"Erro ao listar certificados: {e}")
         condominios = []
@@ -747,7 +805,7 @@ def lista_certificados():
 @app.route("/empresas-parceiras")
 def lista_empresas():
     try:
-        empresas = Empresa.query.filter_by(status=UserStatus.APROVADO).order_by(Empresa.nome).all()
+        empresas = Empresa.query.filter_by(status="aprovado").order_by(Empresa.nome).all()
     except Exception as e:
         print(f"Erro ao listar empresas: {e}")
         empresas = []
@@ -929,83 +987,16 @@ def admin_edit_condominio_rank(_id):
         new_rank = CondominioRank[new_rank_str.upper()]
         
         if c.rank == new_rank:
-            flash(f"O condomínio já possui o rank {new_rank.value.capitalize()}.", "info")
+            flash(f"O condomínio já possui o rank {new_rank.value.capitalize()}.
+", "info")
         else:
             c.rank = new_rank
             db.session.commit()
-            flash(f"Rank do condomínio atualizado para {new_rank.value.capitalize()}.", "success")
+            flash(f"Rank do condomínio atualizado para {new_rank.value.capitalize()}.
+", "success")
 
     except KeyError:
         flash("Rank inválido selecionado.", "danger")
-    
-    return redirect(url_for("admin_condominio_detalhe", _id=_id))
-
-
-@app.post("/admin/condominio/<int:_id>/edit-status")
-@login_required
-def admin_edit_condominio_status(_id):
-    if session.get("user_type") != "admin":
-        flash("Acesso restrito.", "danger")
-        return redirect(url_for("logout"))
-
-    c = Condominio.query.get_or_404(_id)
-    old_status = c.status
-    new_status_str = request.form.get("status")
-
-    if not new_status_str:
-        flash("Nenhum status foi selecionado.", "danger")
-        return redirect(url_for("admin_condominio_detalhe", _id=_id))
-
-    try:
-        new_status = UserStatus[new_status_str.upper()]
-        
-        if c.status == new_status:
-            flash(f"O condomínio já possui o status {new_status.value}.", "info")
-        else:
-            c.status = new_status
-            db.session.commit()
-            flash(f"Status do condomínio atualizado para {new_status.value}.", "success")
-
-            if new_status == UserStatus.SUSPENSO:
-                try:
-                    msg = Message(
-                        "Sua conta foi temporariamente suspensa - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME_SENDER"],
-                        recipients=[c.email]
-                    )
-                    msg.body = (
-                        f"Olá {c.contato_nome},\n\n"
-                        f"Sua conta para o condomínio {c.nome} foi temporariamente suspensa por um administrador.\n"
-                        "Estamos investigando o caso. Se você acredita que isso é um engano ou precisa de mais informações, "
-                        "por favor, entre em contato conosco pelo e-mail: administrador@condblindado.com.br\n\n"
-                        "Atenciosamente,\nEquipe Condomínio Blindado"
-                    )
-                    mail.send(msg)
-                    flash("E-mail de notificação de suspensão enviado ao usuário.", "info")
-                except Exception as e:
-                    print(f"Falha ao enviar e-mail de suspensão: {e}")
-                    flash("Houve uma falha ao enviar o e-mail de notificação de suspensão. Verifique o console.", "warning")
-            elif old_status == UserStatus.SUSPENSO and new_status == UserStatus.ATIVO:
-                try:
-                    msg = Message(
-                        "Sua conta foi reativada - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME_SENDER"],
-                        recipients=[c.email]
-                    )
-                    msg.body = (
-                        f"Olá {c.contato_nome},\n\n"
-                        f"Boas notícias! Sua conta para o condomínio {c.nome} foi reativada.\n"
-                        "Você já pode acessar o sistema normalmente.\n\n"
-                        "Atenciosamente,\nEquipe Condomínio Blindado"
-                    )
-                    mail.send(msg)
-                    flash("E-mail de notificação de reativação enviado ao usuário.", "info")
-                except Exception as e:
-                    print(f"Falha ao enviar e-mail de reativação: {e}")
-                    flash("Houve uma falha ao enviar o e-mail de notificação de reativação. Verifique o console.", "warning")
-
-    except KeyError:
-        flash("Status inválido selecionado.", "danger")
     
     return redirect(url_for("admin_condominio_detalhe", _id=_id))
 
@@ -1016,10 +1007,6 @@ def admin_edit_condominio_status(_id):
 @app.context_processor
 def inject_user():
     return dict(session)
-
-@app.context_processor
-def inject_status_enum():
-    return dict(UserStatus=UserStatus)
 
 if __name__ == "__main__":
     app.run(debug=True)

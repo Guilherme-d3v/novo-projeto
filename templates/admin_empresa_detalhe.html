@@ -33,6 +33,14 @@ Visualizar Documento
 <span class="font-semibold text-gray-700">Status:</span>
 <p class="text-gray-900">{{ e.status | upper }}</p>
 </div>
+<div>
+<span class="font-semibold text-gray-700">Login:</span>
+{% if e.is_active %}
+<p class="text-green-600 font-bold">Ativo</p>
+{% else %}
+<p class="text-red-600 font-bold">Suspenso</p>
+{% endif %}
+</div>
 <!-- Adicione outros campos de detalhe aqui -->
 </div>
 
@@ -50,23 +58,24 @@ Visualizar Documento
     </form>
     {% endif %}
 
-    {% if e.status == UserStatus.APROVADO %}
+    {% if e.status == 'aprovado' %}
     <div class="mt-8 border-t pt-6">
-        <h3 class="text-2xl font-bold text-gray-800 mb-4">Editar Status</h3>
-        <p class="mb-2 text-gray-700">Status Atual: <span class="font-bold">{{ e.status.value | capitalize }}</span></p>
-        <form action="{{ url_for('admin_edit_empresa_status', _id=e.id) }}" method="post" class="flex items-end space-x-4">
-            <div class="flex-grow">
-                <label for="status-edit" class="block font-semibold text-gray-700">Novo Status:</label>
-                <select name="status" id="status-edit" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                    <option value="ativo" {% if e.status and e.status.name == 'ATIVO' %}selected{% endif %}>Ativo</option>
-                    <option value="suspenso" {% if e.status and e.status.name == 'SUSPENSO' %}selected{% endif %}>Suspenso</option>
-                    <option value="pendente" {% if e.status and e.status.name == 'PENDENTE' %}selected{% endif %}>Pendente</option>
-                </select>
-            </div>
-            <button type="submit" class="bg-orange-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-600 transition duration-300">
-                Atualizar Status
-            </button>
-        </form>
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Editar Status do Login</h3>
+        <div>
+            <p class="mb-2 text-gray-700">Status do Login: <span class="font-bold">{{ 'Ativo' if e.is_active else 'Suspenso' }}</span></p>
+            <form action="{{ url_for('admin_set_active_empresa', _id=e.id) }}" method="post" class="flex items-end space-x-4">
+                <div class="flex-grow">
+                    <label for="is_active-edit" class="block font-semibold text-gray-700">Alterar Status do Login:</label>
+                    <select name="is_active" id="is_active-edit" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="true" {% if e.is_active %}selected{% endif %}>Ativo</option>
+                        <option value="false" {% if not e.is_active %}selected{% endif %}>Suspenso</option>
+                    </select>
+                </div>
+                <button type="submit" class="bg-orange-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-600 transition duration-300">
+                    Atualizar
+                </button>
+            </form>
+        </div>
     </div>
     {% endif %}
 </div>
