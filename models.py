@@ -11,7 +11,6 @@ class CondominioRank(enum.Enum):
     BRONZE = "bronze"
     PRATA = "prata"
     OURO = "ouro"
-    DIAMANTE = "diamante"
 
 class Condominio(db.Model):
     

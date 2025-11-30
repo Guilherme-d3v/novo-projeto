@@ -13,6 +13,16 @@
                     <i class="fas fa-check-circle mr-2"></i>
                     <span class="font-semibold text-sm md:text-base">Selo Blindado Aprovado</span>
                 </div>
+                <div class="mt-2 md:mt-4">
+                    <p class="font-semibold text-sm md:text-base text-gray-700">Rank:</p>
+                    <div class="flex items-center">
+                        {% if c.rank.name == 'BRONZE' %}<img src="{{ url_for('static', filename='img/bronze.png') }}" alt="Bronze" class="inline-block w-6 h-6 mr-1">
+                        {% elif c.rank.name == 'PRATA' %}<img src="{{ url_for('static', filename='img/prata.png') }}" alt="Prata" class="inline-block w-6 h-6 mr-1">
+                        {% elif c.rank.name == 'OURO' %}<img src="{{ url_for('static', filename='img/ouro.png') }}" alt="Ouro" class="inline-block w-6 h-6 mr-1">
+                        {% endif %}
+                        <span class="text-sm md:text-base text-gray-900">{{ c.rank.value.capitalize() }}</span>
+                    </div>
+                </div>
                 <p class="text-xs md:text-sm mt-2 md:mt-4 text-gray-500">Certificado em: {{ c.created_at.strftime('%d/%m/%Y') }}</p>
             </div>
             {% endfor %}
