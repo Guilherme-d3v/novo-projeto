@@ -67,8 +67,7 @@
                             </button>
                             <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl z-10">
                                 {% if session['user_type'] == 'admin' %}
-                                    <a href="{{ url_for('admin_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-user-circle mr-2"></i>Minha Conta</a>
-                                    <a href="{{ url_for('mudar_senha') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-key mr-2"></i>Mudar Senha</a>
+                                    <a href="{{ url_for('admin_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-cog mr-2"></i>Painel Dashboard</a>
                                 {% else %}
                                     <a href="{{ url_for(session['user_type'] + '_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-user-circle mr-2"></i>Minha Conta</a>
                                     <a href="{{ url_for('mudar_senha') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-key mr-2"></i>Mudar Senha</a>
