@@ -1,19 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Mudar Senha Obrigatória{% endblock %}
+{% block title %}Mudar Senha{% endblock %}
 {% block content %}
 <div class="container mx-auto p-4 max-w-md w-full">
     <h1 class="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-center">Definir Nova Senha</h1>
+    {% if session.get('needs_password_change') %}
     <p class="text-sm md:text-base text-center mb-4 md:mb-6 text-red-600 font-semibold">
         Sua conta foi aprovada! Por segurança, você deve criar uma nova senha antes de continuar.
     </p>
+    {% else %}
+    <p class="text-sm md:text-base text-center mb-4 md:mb-6 text-gray-600">
+        Utilize o formulário abaixo para alterar a sua senha de acesso.
+    </p>
+    {% endif %}
     <form action="{{ url_for('mudar_senha') }}" method="POST" class="bg-white p-4 md:p-6 rounded-lg shadow-md space-y-3 md:space-y-4">
         <div class="flex flex-col">
-            <label for="nova_senha" class="mb-1 font-medium text-sm md:text-base">Nova Senha</label>
+            <label for="nova_senha" class="mb-1 font-medium text-sm md-text-base">Nova Senha</label>
             <input type="password" id="nova_senha" name="nova_senha" required minlength="6"
                    class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blindado-blue text-sm md:text-base">
         </div>
         <div class="flex flex-col">
-            <label for="confirma_senha" class="mb-1 font-medium text-sm md:text-base">Confirmar Nova Senha</label>
+            <label for="confirma_senha" class="mb-1 font-medium text-sm md-text-base">Confirmar Nova Senha</label>
             <input type="password" id="confirma_senha" name="confirma_senha" required minlength="6"
                    class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blindado-blue text-sm md:text-base">
         </div>

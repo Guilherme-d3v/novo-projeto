@@ -341,9 +341,7 @@ def login():
             session["user_name"] = condominio.contato_nome
             flash(f"Bem-vindo(a), {condominio.contato_nome}!", "success")
             
-            # NOVO: Verificar se precisa mudar a senha
             if condominio.needs_password_change:
-                flash("Por favor, defina uma nova senha para sua conta por segurança.", "info")
                 return redirect(url_for("mudar_senha"))
 
             return redirect(url_for("condominio_dashboard"))
@@ -357,9 +355,7 @@ def login():
             session["user_name"] = empresa.nome
             flash(f"Bem-vindo(a), {empresa.nome}!", "success")
             
-            # NOVO: Verificar se precisa mudar a senha
             if empresa.needs_password_change:
-                flash("Por favor, defina uma nova senha para sua conta por segurança.", "info")
                 return redirect(url_for("mudar_senha"))
 
             return redirect(url_for("empresa_dashboard"))
@@ -374,10 +370,9 @@ def login():
 def mudar_senha():
     user_type = session.get("user_type")
     user_id = session.get("user_id")
-    
-    # Admins nao precisam trocar senha aqui
+
     if user_type == "admin":
-        flash("Administradores não precisam usar este recurso.", "warning")
+        flash("A senha do administrador deve ser alterada no arquivo .env do servidor.", "info")
         return redirect(url_for("admin_dashboard"))
         
     user_entity = None
@@ -389,11 +384,6 @@ def mudar_senha():
     if not user_entity:
         return redirect(url_for("logout"))
         
-    # Se o flag for False e ele tentar acessar a rota, o redireciona
-    if not user_entity.needs_password_change:
-        flash("Sua senha já está segura.", "success")
-        return redirect(url_for(f"{user_type}_dashboard"))
-    
     if request.method == "POST":
         nova_senha = request.form.get("nova_senha")
         confirma_senha = request.form.get("confirma_senha")
@@ -419,8 +409,7 @@ def mudar_senha():
             flash(f"Erro ao salvar a nova senha: {str(e)}", "danger")
             return redirect(request.url)
             
-    # GET request
-    return render_template("mudar_senha.html") 
+    return render_template("mudar_senha_form.html") 
 
 
 @app.route("/sair")
@@ -465,9 +454,6 @@ def condominio_dashboard():
         return redirect(url_for("logout"))
         
     condominio = Condominio.query.get_or_404(user_id)
-    
-    if condominio.needs_password_change:
-        return redirect(url_for("mudar_senha"))
         
     return render_template("condominio_dashboard.html", c=condominio)
 
@@ -481,9 +467,6 @@ def empresa_dashboard():
         return redirect(url_for("logout"))
         
     empresa = Empresa.query.get_or_404(user_id)
-    
-    if empresa.needs_password_change:
-        return redirect(url_for("mudar_senha"))
 
     return render_template("empresa_dashboard.html", e=empresa)
 
