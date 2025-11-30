@@ -987,13 +987,11 @@ def admin_edit_condominio_rank(_id):
         new_rank = CondominioRank[new_rank_str.upper()]
         
         if c.rank == new_rank:
-            flash(f"O condomínio já possui o rank {new_rank.value.capitalize()}.
-", "info")
+            flash(f"O condomínio já possui o rank {new_rank.value.capitalize()}.", "info")
         else:
             c.rank = new_rank
             db.session.commit()
-            flash(f"Rank do condomínio atualizado para {new_rank.value.capitalize()}.
-", "success")
+            flash(f"Rank do condomínio atualizado para {new_rank.value.capitalize()}.", "success")
 
     except KeyError:
         flash("Rank inválido selecionado.", "danger")
