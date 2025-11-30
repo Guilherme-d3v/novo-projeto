@@ -69,25 +69,8 @@
                                 {% if session['user_type'] == 'admin' %}
                                     <a href="{{ url_for('admin_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-cog mr-2"></i>Painel Dashboard</a>
                                 {% else %}
-                                    <a href="{{ url_for(session['user_type'] + '_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-user-circle mr-2"></i>Minha Conta</a>
+                                    <a href="{{ url_for(session['user_type'] + '_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-user-circle mr-2"></i>Dashboard</a>
                                     <a href="{{ url_for('mudar_senha') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-key mr-2"></i>Mudar Senha</a>
-                                    <div class="border-t border-gray-200"></div>
-                                    {% if session['user_type'] == 'empresa' %}
-                                        <a href="{{ url_for('cadastrar_empresa') }}" class="flex items-center px-4 py-2 text-gray-800 font-semibold opacity-50 cursor-not-allowed" title="Você já é uma empresa"><i class="fas fa-building mr-2"></i>Cadastrar Empresa</a>
-                                    {% else %}
-                                        <a href="{{ url_for('cadastrar_empresa') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-building mr-2"></i>Cadastrar Empresa</a>
-                                    {% endif %}
-                                    {% if session['user_type'] == 'condominio' %}
-                                        <a href="{{ url_for('certificar_condominio') }}" class="flex items-center px-4 py-2 text-gray-800 font-semibold opacity-50 cursor-not-allowed" title="Você já é um condomínio"><i class="fas fa-shield-alt mr-2"></i>Certificar Condomínio</a>
-                                    {% else %}
-                                        <a href="{{ url_for('certificar_condominio') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-shield-alt mr-2"></i>Certificar Condomínio</a>
-                                    {% endif %}
-                                    <div class="border-t border-gray-200"></div>
-                                    {% if session['user_type'] == 'condominio' %}
-                                        <a href="{{ url_for('lista_certificados') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-certificate mr-2"></i>Meus Certificados</a>
-                                    {% elif session['user_type'] == 'empresa' %}
-                                        <a href="{{ url_for('lista_empresas') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-briefcase mr-2"></i>Minhas Empresas</a>
-                                    {% endif %}
                                 {% endif %}
                                 <div class="border-t border-gray-200"></div>
                                 <a href="{{ url_for('logout') }}" class="flex items-center px-4 py-2 text-red-700 hover:bg-red-100 hover:text-red-800 font-semibold text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Sair</a>
