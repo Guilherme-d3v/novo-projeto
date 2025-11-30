@@ -1017,5 +1017,9 @@ def admin_edit_condominio_status(_id):
 def inject_user():
     return dict(session)
 
+@app.context_processor
+def inject_status_enum():
+    return dict(UserStatus=UserStatus)
+
 if __name__ == "__main__":
     app.run(debug=True)
