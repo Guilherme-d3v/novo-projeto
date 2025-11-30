@@ -12,6 +12,11 @@ class CondominioRank(enum.Enum):
     PRATA = "prata"
     OURO = "ouro"
 
+class UserStatus(enum.Enum):
+    ATIVO = "ativo"
+    SUSPENSO = "suspenso"
+    PENDENTE = "pendente"
+
 class Condominio(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
@@ -32,7 +37,7 @@ class Condominio(db.Model):
     observacoes = db.Column(db.Text)
     progress = db.Column(db.Integer, default=0)
     pdf_filename = db.Column(db.String(300))
-    status = db.Column(db.String(20), default="pendente")
+    status = db.Column(ENUM(UserStatus, name="user_status"), default=UserStatus.ATIVO, nullable=False)
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -75,7 +80,7 @@ class Empresa(db.Model):
     email_comercial = db.Column(db.String(100))
     website = db.Column(db.String(200))
     doc_filename = db.Column(db.String(300))
-    status = db.Column(db.String(20), default="pendente")
+    status = db.Column(ENUM(UserStatus, name="user_status"), default=UserStatus.ATIVO, nullable=False)
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     

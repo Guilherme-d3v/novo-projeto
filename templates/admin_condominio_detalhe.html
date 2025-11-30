@@ -66,29 +66,48 @@ Visualizar PDF
     <!-- Seção para editar o Rank se já aprovado -->
     {% if c.status == 'aprovado' %}
     <div class="mt-8 border-t pt-6">
-        <h3 class="text-2xl font-bold text-gray-800 mb-4">Editar Rank</h3>
-        <p class="mb-2 text-gray-700">Rank Atual: 
-            <span class="font-bold">
-                {% if c.rank.name == 'BRONZE' %}<img src="{{ url_for('static', filename='img/bronze.png') }}" alt="Bronze" class="inline-block w-6 h-6 mr-1">Bronze
-                {% elif c.rank.name == 'PRATA' %}<img src="{{ url_for('static', filename='img/prata.png') }}" alt="Prata" class="inline-block w-6 h-6 mr-1">Prata
-                {% elif c.rank.name == 'OURO' %}<img src="{{ url_for('static', filename='img/ouro.png') }}" alt="Ouro" class="inline-block w-6 h-6 mr-1">Ouro
-                {% else %}N/A{% endif %}
-            </span>
-        </p>
-        
-        <form action="{{ url_for('admin_edit_condominio_rank', _id=c.id) }}" method="post" class="flex items-end space-x-4">
-            <div class="flex-grow">
-                <label for="rank-edit" class="block font-semibold text-gray-700">Novo Rank:</label>
-                <select name="rank" id="rank-edit" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                    <option value="bronze" {% if c.rank and c.rank.name == 'BRONZE' %}selected{% endif %}>Bronze</option>
-                    <option value="prata" {% if c.rank and c.rank.name == 'PRATA' %}selected{% endif %}>Prata</option>
-                    <option value="ouro" {% if c.rank and c.rank.name == 'OURO' %}selected{% endif %}>Ouro</option>
-                </select>
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Editar Rank e Status</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <p class="mb-2 text-gray-700">Rank Atual: 
+                    <span class="font-bold">
+                        {% if c.rank.name == 'BRONZE' %}<img src="{{ url_for('static', filename='img/bronze.png') }}" alt="Bronze" class="inline-block w-6 h-6 mr-1">Bronze
+                        {% elif c.rank.name == 'PRATA' %}<img src="{{ url_for('static', filename='img/prata.png') }}" alt="Prata" class="inline-block w-6 h-6 mr-1">Prata
+                        {% elif c.rank.name == 'OURO' %}<img src="{{ url_for('static', filename='img/ouro.png') }}" alt="Ouro" class="inline-block w-6 h-6 mr-1">Ouro
+                        {% else %}N/A{% endif %}
+                    </span>
+                </p>
+                <form action="{{ url_for('admin_edit_condominio_rank', _id=c.id) }}" method="post" class="flex items-end space-x-4">
+                    <div class="flex-grow">
+                        <label for="rank-edit" class="block font-semibold text-gray-700">Novo Rank:</label>
+                        <select name="rank" id="rank-edit" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="bronze" {% if c.rank and c.rank.name == 'BRONZE' %}selected{% endif %}>Bronze</option>
+                            <option value="prata" {% if c.rank and c.rank.name == 'PRATA' %}selected{% endif %}>Prata</option>
+                            <option value="ouro" {% if c.rank and c.rank.name == 'OURO' %}selected{% endif %}>Ouro</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
+                        Atualizar Rank
+                    </button>
+                </form>
             </div>
-            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
-                Atualizar Rank
-            </button>
-        </form>
+            <div>
+                <p class="mb-2 text-gray-700">Status Atual: <span class="font-bold">{{ c.status.value | capitalize }}</span></p>
+                <form action="{{ url_for('admin_edit_condominio_status', _id=c.id) }}" method="post" class="flex items-end space-x-4">
+                    <div class="flex-grow">
+                        <label for="status-edit" class="block font-semibold text-gray-700">Novo Status:</label>
+                        <select name="status" id="status-edit" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="ativo" {% if c.status and c.status.name == 'ATIVO' %}selected{% endif %}>Ativo</option>
+                            <option value="suspenso" {% if c.status and c.status.name == 'SUSPENSO' %}selected{% endif %}>Suspenso</option>
+                            <option value="pendente" {% if c.status and c.status.name == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-orange-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-600 transition duration-300">
+                        Atualizar Status
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
     {% endif %}
 </div>
