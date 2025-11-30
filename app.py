@@ -328,6 +328,7 @@ def login():
             session.clear()
             session["user_type"] = "admin"
             session["user_id"] = "admin"
+            session["user_name"] = "Admin"
             flash("Login de Administrador efetuado.", "success")
             return redirect(url_for("admin_dashboard"))
 
@@ -337,6 +338,7 @@ def login():
             session.clear()
             session["user_type"] = "condominio"
             session["user_id"] = condominio.id
+            session["user_name"] = condominio.contato_nome
             flash(f"Bem-vindo(a), {condominio.contato_nome}!", "success")
             
             # NOVO: Verificar se precisa mudar a senha
@@ -352,6 +354,7 @@ def login():
             session.clear()
             session["user_type"] = "empresa"
             session["user_id"] = empresa.id
+            session["user_name"] = empresa.nome
             flash(f"Bem-vindo(a), {empresa.nome}!", "success")
             
             # NOVO: Verificar se precisa mudar a senha
@@ -880,6 +883,10 @@ def admin_edit_condominio_rank(_id):
 # ------------------------------------------------------------------------
 # FIM DAS NOVAS ROTAS STRIPE 
 # ------------------------------------------------------------------------
+
+@app.context_processor
+def inject_user():
+    return dict(session)
 
 if __name__ == "__main__":
     app.run(debug=True)
