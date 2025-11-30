@@ -41,6 +41,7 @@ class Condominio(db.Model):
     status = db.Column(ENUM(UserStatus, name="user_status"), default=UserStatus.ATIVO, nullable=False)
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     password_hash = db.Column(db.String(256), nullable=True) 
     
@@ -84,6 +85,7 @@ class Empresa(db.Model):
     status = db.Column(ENUM(UserStatus, name="user_status"), default=UserStatus.ATIVO, nullable=False)
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     password_hash = db.Column(db.String(256), nullable=True) 
     
