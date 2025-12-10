@@ -86,18 +86,6 @@ def blog():
 def faq():
     return render_template("faq.html")
 
-
-# 🌟 NOVA ROTA PARA PÁGINA DE PREÇOS 🌟
-@app.route("/planos")
-@login_required 
-def planos():
-    # Aqui você pode passar dados, se necessário, mas a tabela do Stripe é estática
-    return render_template("pricing.html", 
-                           user_id=session.get("user_id"), 
-                           user_type=session.get("user_type"))
-
-@app.route("/contato", methods=["GET", "POST"])
-
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
     if request.method == "POST":
