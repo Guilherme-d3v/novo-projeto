@@ -1,120 +1,126 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Condomínio Blindado{% endblock %}</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js -->
-    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-        }
-        .bg-blindado-blue {
-            background-color: #1e88e5;
-        }
-        .bg-blindado-light-blue {
-            background-color: #e3f2fd;
-        }
-        .bg-blindado-dark {
-            background-color: #1a365d;
-        }
-        .text-blindado-blue {
-            color: #1e88e5;
-        }
-        .header-shadow {
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        /* Adicionando classes para responsividade */
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Condomínio Blindado{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .bg-blindado-blue {
+            background-color: #1e88e5;
+        }
+        .bg-blindado-light-blue {
+            background-color: #e3f2fd;
+        }
+        .bg-blindado-dark {
+            background-color: #1a365d;
+        }
+        .text-blindado-blue {
+            color: #1e88e5;
+        }
+        .header-shadow {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        /* Adicionando classes para responsividade */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+    </style>
 </head>
 <body class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="bg-blindado-blue text-white shadow-lg w-full">
-        <nav class="container mx-auto px-4 py-4">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <a href="{{ url_for('index') }}" class="flex items-center space-x-2 mb-4 md:mb-0">
-                    <i class="fas fa-shield-alt text-3xl"></i>
-                    <span class="text-2xl font-bold">BLINDADO</span>
-                </a>
-                <div class="hidden md:flex space-x-4 md:space-x-8 w-full md:w-auto mb-4 md:mb-0">
-                    <a href="{{ url_for('index') }}" class="hover:text-blindado-light-blue transition duration-300">Início</a>
-                    <a href="{{ url_for('lista_certificados') }}" class="hover:text-blindado-light-blue transition duration-300">Condomínios</a>
-                    <a href="{{ url_for('lista_empresas') }}" class="hover:text-blindado-light-blue transition duration-300">Prestadores</a>
-                    <a href="#" class="hover:text-blindado-light-blue transition duration-300 opacity-50 cursor-not-allowed" title="Em breve">Serviços</a>
-                    <a href="{{ url_for('blog') }}" class="hover:text-blindado-light-blue transition duration-300">Blog</a>
-                    <a href="{{ url_for('faq') }}" class="hover:text-blindado-light-blue transition duration-300">FAQ</a>
-                    <a href="{{ url_for('contato') }}" class="hover:text-blindado-light-blue transition duration-300">Contato</a>
-                </div>
-                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 w-full md:w-auto">
-                    {% if session['user_type'] %}
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 w-full md:w-auto text-center">
-                                <i class="fas fa-user mr-2"></i> {{ session['user_name'] }} <i class="fas fa-caret-down ml-2"></i>
-                            </button>
-                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl z-10">
-                                {% if session['user_type'] == 'admin' %}
-                                    <a href="{{ url_for('admin_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-cog mr-2"></i>Painel Dashboard</a>
-                                {% else %}
-                                    <a href="{{ url_for(session['user_type'] + '_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-user-circle mr-2"></i>Dashboard</a>
-                                    <a href="{{ url_for('mudar_senha') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-key mr-2"></i>Mudar Senha</a>
-                                {% endif %}
-                                <div class="border-t border-gray-200"></div>
-                                <a href="{{ url_for('logout') }}" class="flex items-center px-4 py-2 text-red-700 hover:bg-red-100 hover:text-red-800 font-semibold text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Sair</a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <a href="{{ url_for('login') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 w-full md:w-auto text-center">
-                            Entrar
-                        </a>
-                    {% endif %}
-                </div>
-            </div>
-        </nav>
-    </header>
+    <!-- Header -->
+    <header class="bg-blindado-blue text-white shadow-lg w-full">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <a href="{{ url_for('index') }}" class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <i class="fas fa-shield-alt text-3xl"></i>
+                    <span class="text-2xl font-bold">BLINDADO</span>
+                </a>
+                <div class="hidden md:flex space-x-4 md:space-x-8 w-full md:w-auto mb-4 md:mb-0">
+                    <a href="{{ url_for('index') }}" class="hover:text-blindado-light-blue transition duration-300">Início</a>
+                    
+                    <!-- 🌟 NOVO LINK PARA PLANOS 🌟 -->
+                    <!-- Adicionamos o link para a nova rota /planos de forma destacada -->
+                    <a href="{{ url_for('planos') }}" class="hover:text-blindado-light-blue transition duration-300 font-bold text-yellow-300 hover:text-white">PLANOS</a>
+                    <!-- -------------------------- -->
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8 flex-grow w-full">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="mb-6 w-full">
-                    {% for category, message in messages %}
-                        <div class="p-4 rounded-lg text-white mb-2 {% if category == 'success' %}bg-green-500{% elif category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% else %}bg-blue-500{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-    </main>
+                    <a href="{{ url_for('lista_certificados') }}" class="hover:text-blindado-light-blue transition duration-300">Condomínios</a>
+                    <a href="{{ url_for('lista_empresas') }}" class="hover:text-blindado-light-blue transition duration-300">Prestadores</a>
+                    <a href="#" class="hover:text-blindado-light-blue transition duration-300 opacity-50 cursor-not-allowed" title="Em breve">Serviços</a>
+                    <a href="{{ url_for('blog') }}" class="hover:text-blindado-light-blue transition duration-300">Blog</a>
+                    <a href="{{ url_for('faq') }}" class="hover:text-blindado-light-blue transition duration-300">FAQ</a>
+                    <a href="{{ url_for('contato') }}" class="hover:text-blindado-light-blue transition duration-300">Contato</a>
+                </div>
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 w-full md:w-auto">
+                    {% if session['user_type'] %}
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 w-full md:w-auto text-center">
+                                <i class="fas fa-user mr-2"></i> {{ session['user_name'] }} <i class="fas fa-caret-down ml-2"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl z-10">
+                                {% if session['user_type'] == 'admin' %}
+                                    <a href="{{ url_for('admin_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-cog mr-2"></i>Painel Dashboard</a>
+                                {% else %}
+                                    <a href="{{ url_for(session['user_type'] + '_dashboard') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-user-circle mr-2"></i>Dashboard</a>
+                                    <a href="{{ url_for('mudar_senha') }}" class="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-100 font-semibold"><i class="fas fa-key mr-2"></i>Mudar Senha</a>
+                                {% endif %}
+                                <div class="border-t border-gray-200"></div>
+                                <a href="{{ url_for('logout') }}" class="flex items-center px-4 py-2 text-red-700 hover:bg-red-100 hover:text-red-800 font-semibold text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Sair</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="bg-white text-blindado-blue font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 w-full md:w-auto text-center">
+                            Entrar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
 
-    <!-- Footer -->
-    <footer class="bg-blindado-dark text-white py-8 w-full">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center space-x-2 mb-4 md:mb-0">
-                    <i class="fas fa-shield-alt text-2xl"></i>
-                    <span class="text-xl font-bold">BLINDADO</span>
-                </div>
-                <div>
-                    <p class="text-gray-300 text-center md:text-right">© 2025 Condomínio Blindado. Todos os direitos reservados.</p>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex-grow w-full">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-6 w-full">
+                    {% for category, message in messages %}
+                        <div class="p-4 rounded-lg text-white mb-2 {% if category == 'success' %}bg-green-500{% elif category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% else %}bg-blue-500{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-blindado-dark text-white py-8 w-full">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <i class="fas fa-shield-alt text-2xl"></i>
+                    <span class="text-xl font-bold">BLINDADO</span>
+                </div>
+                <div>
+                    <p class="text-gray-300 text-center md:text-right">© 2025 Condomínio Blindado. Todos os direitos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

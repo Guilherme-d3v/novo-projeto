@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Planos de Assinatura{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+    <h1 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-4">Escolha o Nível de Certificação Ideal</h1>
+    <p class="text-center text-gray-600 mb-8">
+        Selecione o plano que melhor se adapta às necessidades de segurança e gestão do seu condomínio.
+    </p>
+
+    <!-- 🌟 CONTAINER DO WIDGET DE PREÇOS DO STRIPE 🌟 -->
+    <div class="bg-white p-4 md:p-8 rounded-lg shadow-xl border border-gray-200">
+
+        <!-- 
+            Lógica Jinja2: Prepara o identificador do cliente (ID do Stripe ou Email) 
+            para o widget. Isso evita que o cliente tenha que digitar o email novamente 
+            no checkout do Stripe.
+        -->
+        {% set customer_identifier = '' %}
+        {% if c and c.stripe_customer_id %}
+            {% set customer_identifier = c.stripe_customer_id %}
+        {% elif c and c.email %}
+            {% set customer_identifier = c.email %}
+        {% endif %}
+
+        <!-- O SEU CÓDIGO DA TABELA DE PREÇOS DO STRIPE COMEÇA AQUI -->
+        
+        <!-- Script que carrega a biblioteca do Stripe (DEVE VIR PRIMEIRO) -->
+        <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
+
+        <!-- Widget da Tabela de Preços, usando suas chaves e ID da tabela -->
+        <stripe-pricing-table 
+            pricing-table-id="prctbl_1ScnPq1IYJ6hPev6WslxdHns" 
+            publishable-key="pk_live_51SX26g1IYJ6hPev6i51nCdqnUxsvnvEnRSwcyQw9nHQsAo4puON1HbbwK6jbxRicJTFRLOK1aQqamYuztgWLRkSX007Dti63qm"
+            {% if customer_identifier %}
+            customer-email="{{ customer_identifier }}"
+            {% endif %}
+        >
+        </stripe-pricing-table>
+        
+        <!-- O SEU CÓDIGO DA TABELA DE PREÇOS DO STRIPE TERMINA AQUI -->
+
+        <p class="text-center text-sm text-gray-500 mt-6">
+            Ao clicar em 'Assinar', você será redirecionado para a página de checkout segura e certificada pelo Stripe.
+        </p>
+    </div>
+    <!-- 🌟 FIM DO WIDGET DE PREÇOS DO STRIPE 🌟 -->
+
+</div>
+{% endblock %}
