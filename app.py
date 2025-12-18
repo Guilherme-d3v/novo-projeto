@@ -94,6 +94,19 @@ def contato():
     return render_template("contato.html")
 
 
+@app.route("/planos")
+def pricing():
+    user_id = session.get("user_id")
+    user_type = session.get("user_type")
+    
+    # Tenta buscar o condomínio se ele estiver logado para passar para o template
+    condominio = None
+    if user_type == "condominio" and user_id:
+        condominio = Condominio.query.get(user_id)
+    
+    return render_template("pricing.html", c=condominio)
+
+
 @app.route("/")
 def index():
     try:
