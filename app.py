@@ -550,7 +550,8 @@ def detalhe_licitacao(_id):
     
     # CORREÇÃO: Trata None como 0 para evitar erro de comparação
     saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
-    saldo_insuficiente = saldo_atual < lic.custo_coins
+    custo_licitacao = lic.custo_coins if lic.custo_coins is not None else 0
+    saldo_insuficiente = saldo_atual < custo_licitacao
     
     return render_template("detalhe_licitacao.html", 
                            lic=lic, 
@@ -575,20 +576,21 @@ def candidatar_licitacao(_id):
     
     # CORREÇÃO: Trata None como 0
     saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
+    custo_licitacao = lic.custo_coins if lic.custo_coins is not None else 0
 
-    if saldo_atual < lic.custo_coins:
+    if saldo_atual < custo_licitacao:
         flash("Saldo insuficiente.", "danger")
         return redirect(url_for("comprar_coins"))
         
     try:
         # 1. Debitar Coins
         # Se estava None, agora setamos o novo valor corretamente
-        empresa.saldo_coins = saldo_atual - lic.custo_coins
+        empresa.saldo_coins = saldo_atual - custo_licitacao
         
         # 2. Registrar Transação (Saída)
         transacao = TransacaoCoin(
             empresa_id=empresa.id,
-            quantidade=-lic.custo_coins,
+            quantidade=-custo_licitacao,
             descricao=f"Candidatura Licitação #{lic.id} - {lic.titulo}",
             status="concluido"
         )

@@ -89,7 +89,7 @@ class Empresa(db.Model):
     needs_password_change = db.Column(db.Boolean, default=False) 
     
     # 🌟 NOVO CAMPO: Saldo de Coins para Licitações 🌟
-    saldo_coins = db.Column(db.Integer, default=0)
+    saldo_coins = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
     def set_password(self, password):
         """Hashea e salva a senha."""
