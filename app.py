@@ -548,7 +548,9 @@ def detalhe_licitacao(_id):
     # Verifica se já se candidatou
     ja_candidatou = Candidatura.query.filter_by(licitacao_id=lic.id, empresa_id=empresa.id).first() is not None
     
-    saldo_insuficiente = empresa.saldo_coins < lic.custo_coins
+    # CORREÇÃO: Trata None como 0 para evitar erro de comparação
+    saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
+    saldo_insuficiente = saldo_atual < lic.custo_coins
     
     return render_template("detalhe_licitacao.html", 
                            lic=lic, 
@@ -570,14 +572,18 @@ def candidatar_licitacao(_id):
     if Candidatura.query.filter_by(licitacao_id=lic.id, empresa_id=empresa.id).first():
         flash("Você já se candidatou para esta vaga.", "warning")
         return redirect(url_for("detalhe_licitacao", _id=lic.id))
-        
-    if empresa.saldo_coins < lic.custo_coins:
+    
+    # CORREÇÃO: Trata None como 0
+    saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
+
+    if saldo_atual < lic.custo_coins:
         flash("Saldo insuficiente.", "danger")
         return redirect(url_for("comprar_coins"))
         
     try:
         # 1. Debitar Coins
-        empresa.saldo_coins -= lic.custo_coins
+        # Se estava None, agora setamos o novo valor corretamente
+        empresa.saldo_coins = saldo_atual - lic.custo_coins
         
         # 2. Registrar Transação (Saída)
         transacao = TransacaoCoin(
