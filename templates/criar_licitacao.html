@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Licitação{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Criar Nova Licitação</h1>
+        
+        <p class="text-gray-600 mb-6">Descreva o serviço que seu condomínio necessita. Empresas certificadas poderão enviar propostas.</p>
+
+        <form action="{{ url_for('criar_licitacao') }}" method="POST">
+            <div class="mb-4">
+                <label for="titulo" class="block text-gray-700 font-bold mb-2">Título da Licitação</label>
+                <input type="text" id="titulo" name="titulo" required placeholder="Ex: Manutenção da Piscina"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blindado-blue">
+            </div>
+
+            <div class="mb-4">
+                <label for="tipo_servico" class="block text-gray-700 font-bold mb-2">Tipo de Serviço</label>
+                <select id="tipo_servico" name="tipo_servico" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blindado-blue bg-white">
+                    <option value="" disabled selected>Selecione uma categoria...</option>
+                    <option value="Segurança e Portaria">Segurança e Portaria</option>
+                    <option value="Limpeza e Conservação">Limpeza e Conservação</option>
+                    <option value="Jardinagem">Jardinagem</option>
+                    <option value="Manutenção Predial">Manutenção Predial (Elétrica/Hidráulica)</option>
+                    <option value="Administração">Administração de Condomínios</option>
+                    <option value="Jurídico">Assessoria Jurídica</option>
+                    <option value="Obras e Reformas">Obras e Reformas</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label for="descricao" class="block text-gray-700 font-bold mb-2">Descrição Detalhada</label>
+                <textarea id="descricao" name="descricao" rows="5" required placeholder="Descreva os requisitos, horários, localização e detalhes importantes..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blindado-blue"></textarea>
+            </div>
+
+            <div class="flex items-center justify-between mt-8">
+                <a href="{{ url_for('condominio_dashboard') }}" class="text-gray-600 hover:text-gray-800 font-semibold">
+                    Cancelar
+                </a>
+                <button type="submit" class="bg-blindado-blue hover:bg-blindado-dark text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-md">
+                    <i class="fas fa-paper-plane mr-2"></i> Publicar Licitação
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

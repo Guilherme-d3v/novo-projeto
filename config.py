@@ -59,3 +59,9 @@ class Config:
     STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_...")
     STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_...")
     STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY", "price_...")
+
+    # --- 6. CONFIGURAÇÕES MERCADO PAGO ---
+    # Obtenha o Access Token em: https://www.mercadopago.com.br/developers/panel
+    MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN", "TEST-...") 
+    # Token de verificação do Webhook (opcional, mas recomendado para segurança)
+    MP_WEBHOOK_SECRET = os.getenv("MP_WEBHOOK_SECRET", "")

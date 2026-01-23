@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Licitações Disponíveis{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Oportunidades de Serviço</h1>
+        <div class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-bold flex items-center">
+            <i class="fas fa-coins mr-2"></i> Seu Saldo: {{ saldo_coins }}
+        </div>
+    </div>
+
+    {% if licitacoes %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for lic in licitacoes %}
+            <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">{{ lic.tipo_servico }}</span>
+                        <span class="text-gray-500 text-sm"><i class="far fa-clock mr-1"></i> {{ lic.created_at.strftime('%d/%m') }}</span>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">{{ lic.titulo }}</h3>
+                    <p class="text-gray-600 mb-4 line-clamp-3 text-sm">{{ lic.descricao }}</p>
+                    
+                    <div class="flex items-center text-gray-500 text-sm mb-6">
+                        <i class="fas fa-map-marker-alt mr-2"></i> {{ lic.condominio.cidade }} - {{ lic.condominio.estado }}
+                    </div>
+                    
+                    <div class="flex justify-between items-center border-t pt-4">
+                        <div class="text-sm font-semibold text-gray-700">
+                            Custo: <span class="text-yellow-600 font-bold">{{ lic.custo_coins }} Coins</span>
+                        </div>
+                        <a href="{{ url_for('detalhe_licitacao', _id=lic.id) }}" class="text-blindado-blue hover:text-blindado-dark font-semibold text-sm">
+                            Ver Detalhes <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12 bg-gray-50 rounded-lg">
+            <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600">Nenhuma licitação disponível no momento.</h3>
+            <p class="text-gray-500 mt-2">Fique atento, novas oportunidades surgem todos os dias!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

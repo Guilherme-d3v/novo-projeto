@@ -5,33 +5,44 @@
     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard do Condomínio: {{ c.nome }}</h1>
 
     <!-- 🌟 INÍCIO: SEÇÃO DE ASSINATURA STRIPE (NOVO) 🌟 -->
-    <div class="bg-yellow-50 p-4 md:p-6 rounded-lg mb-4 md:mb-8 border border-yellow-200">
-        <h2 class="text-xl font-bold text-gray-800 mb-2">Status da Assinatura</h2>
-        
-        <p class="text-lg font-semibold mb-3">
-            Status: 
-            {% if c.subscription_status == 'active' %}
-                <span class="text-green-600">ATIVO</span>
-            {% elif c.subscription_status in ['trialing', 'past_due', 'incomplete'] %}
-                <span class="text-yellow-600">{{ c.subscription_status|upper }}</span>
-            {% else %}
-                <span class="text-red-600">INATIVO / PENDENTE</span>
-            {% endif %}
-        </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-8">
+        <div class="bg-yellow-50 p-4 md:p-6 rounded-lg border border-yellow-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Status da Assinatura</h2>
+            
+            <p class="text-lg font-semibold mb-3">
+                Status: 
+                {% if c.subscription_status == 'active' %}
+                    <span class="text-green-600">ATIVO</span>
+                {% elif c.subscription_status in ['trialing', 'past_due', 'incomplete'] %}
+                    <span class="text-yellow-600">{{ c.subscription_status|upper }}</span>
+                {% else %}
+                    <span class="text-red-600">INATIVO / PENDENTE</span>
+                {% endif %}
+            </p>
 
-        {% if c.subscription_status != 'active' %}
-            <!-- Formulário para iniciar o Checkout do Stripe -->
-            <form action="{{ url_for('create_checkout_session', _id=c.id) }}" method="POST">
-                <button type="submit" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
-                    <i class="fas fa-credit-card mr-2"></i> Assinar o Plano Mensal
-                </button>
-                <p class="text-sm text-gray-500 mt-2">Clique para ser redirecionado(a) à página segura de pagamento.</p>
-            </form>
-        {% else %}
-            <p class="text-base text-gray-700">Sua assinatura está ativa. Aproveite todos os recursos do Condomínio Blindado!</p>
-            <!-- Opcional: Adicionar um botão para o Portal do Cliente (Stripe Billing Portal) -->
-            <!-- <button class="bg-blue-500 text-white py-2 px-4 rounded-lg mt-3">Gerenciar Assinatura</button> -->
-        {% endif %}
+            {% if c.subscription_status != 'active' %}
+                <form action="{{ url_for('create_checkout_session', _id=c.id) }}" method="POST">
+                    <button type="submit" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300 w-full md:w-auto">
+                        <i class="fas fa-credit-card mr-2"></i> Assinar Plano
+                    </button>
+                </form>
+            {% else %}
+                <p class="text-base text-gray-700">Sua assinatura está ativa.</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-blue-50 p-4 md:p-6 rounded-lg border border-blue-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Licitações e Serviços</h2>
+            <p class="text-sm text-gray-600 mb-4">Publique suas necessidades e receba propostas de empresas certificadas.</p>
+            <div class="flex flex-col gap-2">
+                <a href="{{ url_for('criar_licitacao') }}" class="bg-blindado-blue text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blindado-dark transition duration-300 text-center">
+                    <i class="fas fa-plus-circle mr-2"></i> Criar Nova Licitação
+                </a>
+                <a href="#" class="bg-white text-blindado-blue border border-blindado-blue font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-50 transition duration-300 text-center">
+                    Ver Minhas Licitações
+                </a>
+            </div>
+        </div>
     </div>
     <!-- 🌟 FIM: SEÇÃO DE ASSINATURA STRIPE 🌟 -->
 

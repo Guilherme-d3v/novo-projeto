@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Adquirir Coins</h2>
+        <p class="text-muted">Aumente suas chances participando de novas licitações de condomínios.</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <!-- Pacote 1 -->
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm text-center">
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-coin text-warning fs-1"></i>
+                    </div>
+                    <h3 class="card-title">Pacote Básico</h3>
+                    <div class="display-5 my-3">50 <small class="fs-6 text-muted">coins</small></div>
+                    <p class="text-muted">Ideal para pequenas empresas que estão começando agora.</p>
+                    <hr>
+                    <div class="fs-4 fw-bold mb-4">R$ 50,00</div>
+                    <button onclick="checkout('pacote_1')" class="btn btn-outline-primary w-100 rounded-pill">Comprar Agora</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacote 2 (Destaque) -->
+        <div class="col">
+            <div class="card h-100 border-primary shadow text-center position-relative">
+                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary">MAIS POPULAR</span>
+                <div class="card-body p-4">
+                    <div class="mb-3 text-primary">
+                        <i class="bi bi-star-fill fs-1"></i>
+                    </div>
+                    <h3 class="card-title">Pacote Pro</h3>
+                    <div class="display-5 my-3">120 <small class="fs-6 text-muted">coins</small></div>
+                    <p class="text-muted">Ótimo custo-benefício com <span class="badge bg-success">20% de bônus</span>.</p>
+                    <hr>
+                    <div class="fs-4 fw-bold mb-4">R$ 100,00</div>
+                    <button onclick="checkout('pacote_2')" class="btn btn-primary w-100 rounded-pill">Comprar Agora</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacote 3 -->
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm text-center">
+                <div class="card-body p-4">
+                    <div class="mb-3 text-warning">
+                        <i class="bi bi-gem fs-1"></i>
+                    </div>
+                    <h3 class="card-title">Pacote Enterprise</h3>
+                    <div class="display-5 my-3">300 <small class="fs-6 text-muted">coins</small></div>
+                    <p class="text-muted">Máxima exposição com <span class="badge bg-success">50% de bônus</span>.</p>
+                    <hr>
+                    <div class="fs-4 fw-bold mb-4">R$ 200,00</div>
+                    <button onclick="checkout('pacote_3')" class="btn btn-outline-primary w-100 rounded-pill">Comprar Agora</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 text-center p-4 bg-light rounded shadow-sm">
+        <h5 class="mb-3">Pagamento Seguro via Mercado Pago</h5>
+        <div class="d-flex justify-content-center gap-3 grayscale opacity-50">
+            <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-256.png" height="30" alt="Mercado Pago">
+            <img src="https://logospng.org/download/pix/logo-pix-256.png" height="30" alt="PIX">
+        </div>
+    </div>
+</div>
+
+<script>
+function checkout(pacoteId) {
+    fetch('/mp/criar-pagamento', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pacote_id: pacoteId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.init_point) {
+            window.location.href = data.init_point;
+        } else {
+            alert("Erro ao iniciar pagamento: " + (data.error || "Erro desconhecido"));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Erro na conexão com o servidor.");
+    });
+}
+</script>
+{% endblock %}

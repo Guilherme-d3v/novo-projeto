@@ -88,6 +88,9 @@ class Empresa(db.Model):
     # NOVO CAMPO: Indica se o usuário precisa trocar a senha na próxima vez que logar
     needs_password_change = db.Column(db.Boolean, default=False) 
     
+    # 🌟 NOVO CAMPO: Saldo de Coins para Licitações 🌟
+    saldo_coins = db.Column(db.Integer, default=0)
+
     def set_password(self, password):
         """Hashea e salva a senha."""
         self.password_hash = generate_password_hash(password)
@@ -97,3 +100,65 @@ class Empresa(db.Model):
         if not self.password_hash:
             return False
         return check_password_hash(self.password_hash, password)
+
+
+# ------------------------------------------------------------------------
+# 🌟 NOVOS MODELOS PARA O SISTEMA DE LICITAÇÕES E COINS 🌟
+# ------------------------------------------------------------------------
+
+class Licitacao(db.Model):
+    __tablename__ = 'licitacao'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    condominio_id = db.Column(db.Integer, db.ForeignKey('condominio.id'), nullable=False)
+    
+    titulo = db.Column(db.String(200), nullable=False)
+    descricao = db.Column(db.Text, nullable=False)
+    tipo_servico = db.Column(db.String(100), nullable=False) # Ex: Jardinagem, Segurança...
+    
+    status = db.Column(db.String(20), default="aberta") # aberta, fechada, cancelada, concluida
+    custo_coins = db.Column(db.Integer, default=10) # Custo para uma empresa se candidatar
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamentos
+    condominio = db.relationship('Condominio', backref=db.backref('licitacoes', lazy=True))
+    candidaturas = db.relationship('Candidatura', backref='licitacao', lazy=True)
+
+
+class Candidatura(db.Model):
+    __tablename__ = 'candidatura'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    licitacao_id = db.Column(db.Integer, db.ForeignKey('licitacao.id'), nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
+    
+    mensagem = db.Column(db.Text) # Proposta inicial ou apresentação
+    preco_estimado = db.Column(db.String(50)) # Opcional
+    
+    status = db.Column(db.String(20), default="pendente") # pendente, aceita, rejeitada
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamentos
+    empresa = db.relationship('Empresa', backref=db.backref('candidaturas', lazy=True))
+
+
+class TransacaoCoin(db.Model):
+    """
+    Registra histórico de compra de coins (Entrada) ou gasto em licitação (Saída)
+    """
+    __tablename__ = 'transacao_coin'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
+    
+    quantidade = db.Column(db.Integer, nullable=False) # Positivo (compra) ou Negativo (uso)
+    descricao = db.Column(db.String(255)) # Ex: "Compra via MercadoPago", "Candidatura Licitação #5"
+    
+    payment_id = db.Column(db.String(100), nullable=True) # ID do pagamento no MP (se houver)
+    status = db.Column(db.String(20), default="concluido") # pendente, aprovado, concluido
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    empresa = db.relationship('Empresa', backref=db.backref('transacoes', lazy=True))

@@ -18,10 +18,11 @@ from dotenv import load_dotenv
 
 # 🌟 NOVO IMPORT DO STRIPE 🌟
 import stripe
+import mercadopago # 🌟 IMPORT DO MERCADO PAGO 🌟
 # -----------------------------
 
 # Dependências LOCAIS que você precisa garantir que existam
-from models import db, Condominio, Empresa, CondominioRank
+from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin
 from config import Config
 
 # Carregar variáveis de ambiente PRIMEIRO
@@ -49,6 +50,9 @@ serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 # 🌟 INICIALIZAÇÃO DO STRIPE 🌟
 # Configura a chave secreta globalmente para a API
 stripe.api_key = app.config["STRIPE_SECRET_KEY"]
+
+# 🌟 INICIALIZAÇÃO DO MERCADO PAGO 🌟
+# sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"]) # Inicializa apenas quando necessário ou globalmente
 # -----------------------------
 
 def allowed_file(filename: str) -> bool:
@@ -478,6 +482,134 @@ def condominio_dashboard():
         
     return render_template("condominio_dashboard.html", c=condominio)
 
+@app.route("/licitacoes/nova", methods=["GET", "POST"])
+@login_required
+def criar_licitacao():
+    user_id = session.get("user_id")
+    if session.get("user_type") != "condominio":
+        flash("Apenas condomínios podem criar licitações.", "warning")
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        titulo = request.form.get("titulo")
+        tipo = request.form.get("tipo_servico")
+        descricao = request.form.get("descricao")
+        
+        if not titulo or not tipo or not descricao:
+            flash("Preencha todos os campos obrigatórios.", "danger")
+            return redirect(request.url)
+            
+        try:
+            nova_licitacao = Licitacao(
+                condominio_id=user_id,
+                titulo=titulo,
+                tipo_servico=tipo,
+                descricao=descricao,
+                status="aberta",
+                custo_coins=10 # Valor fixo por enquanto, pode ser dinâmico no futuro
+            )
+            
+            db.session.add(nova_licitacao)
+            db.session.commit()
+            
+            flash("Licitação publicada com sucesso! As empresas serão notificadas.", "success")
+            return redirect(url_for("condominio_dashboard"))
+            
+        except Exception as e:
+            flash(f"Erro ao criar licitação: {str(e)}", "danger")
+            return redirect(request.url)
+            
+    return render_template("criar_licitacao.html")
+
+@app.route("/licitacoes")
+@login_required
+def listar_licitacoes():
+    user_id = session.get("user_id")
+    if session.get("user_type") != "empresa":
+        flash("Acesso restrito a empresas.", "warning")
+        return redirect(url_for("index"))
+        
+    empresa = Empresa.query.get(user_id)
+    # Lista apenas licitações abertas
+    licitacoes = Licitacao.query.filter_by(status="aberta").order_by(Licitacao.created_at.desc()).all()
+    
+    return render_template("lista_licitacoes.html", licitacoes=licitacoes, saldo_coins=empresa.saldo_coins)
+
+@app.route("/licitacoes/<int:_id>")
+@login_required
+def detalhe_licitacao(_id):
+    user_id = session.get("user_id")
+    if session.get("user_type") != "empresa":
+        return redirect(url_for("index"))
+        
+    lic = Licitacao.query.get_or_404(_id)
+    empresa = Empresa.query.get(user_id)
+    
+    # Verifica se já se candidatou
+    ja_candidatou = Candidatura.query.filter_by(licitacao_id=lic.id, empresa_id=empresa.id).first() is not None
+    
+    saldo_insuficiente = empresa.saldo_coins < lic.custo_coins
+    
+    return render_template("detalhe_licitacao.html", 
+                           lic=lic, 
+                           empresa=empresa, 
+                           ja_candidatou=ja_candidatou,
+                           saldo_insuficiente=saldo_insuficiente)
+
+@app.route("/licitacoes/<int:_id>/candidatar", methods=["POST"])
+@login_required
+def candidatar_licitacao(_id):
+    user_id = session.get("user_id")
+    if session.get("user_type") != "empresa":
+        return redirect(url_for("index"))
+        
+    lic = Licitacao.query.get_or_404(_id)
+    empresa = Empresa.query.get(user_id)
+    
+    # Validações Finais
+    if Candidatura.query.filter_by(licitacao_id=lic.id, empresa_id=empresa.id).first():
+        flash("Você já se candidatou para esta vaga.", "warning")
+        return redirect(url_for("detalhe_licitacao", _id=lic.id))
+        
+    if empresa.saldo_coins < lic.custo_coins:
+        flash("Saldo insuficiente.", "danger")
+        return redirect(url_for("comprar_coins"))
+        
+    try:
+        # 1. Debitar Coins
+        empresa.saldo_coins -= lic.custo_coins
+        
+        # 2. Registrar Transação (Saída)
+        transacao = TransacaoCoin(
+            empresa_id=empresa.id,
+            quantidade=-lic.custo_coins,
+            descricao=f"Candidatura Licitação #{lic.id} - {lic.titulo}",
+            status="concluido"
+        )
+        
+        # 3. Criar Candidatura
+        mensagem = request.form.get("mensagem", "")
+        candidatura = Candidatura(
+            licitacao_id=lic.id,
+            empresa_id=empresa.id,
+            mensagem=mensagem,
+            status="pendente"
+        )
+        
+        db.session.add(transacao)
+        db.session.add(candidatura)
+        db.session.commit()
+        
+        # Opcional: Enviar e-mail para o condomínio notificando nova candidatura
+        
+        flash("Candidatura realizada com sucesso!", "success")
+        return redirect(url_for("detalhe_licitacao", _id=lic.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao processar candidatura: {str(e)}", "danger")
+        return redirect(url_for("detalhe_licitacao", _id=lic.id))
+
 @app.route("/dashboard/empresa")
 @login_required
 def empresa_dashboard():
@@ -842,6 +974,141 @@ def create_tables():
             print("✅ Tabelas criadas com sucesso!")
         except Exception as e:
             print(f"❌ Erro ao criar tabelas: {e}")
+
+# ------------------------------------------------------------------------
+# 🌟 NOVAS ROTAS MERCADO PAGO (COINS) 🌟
+# ------------------------------------------------------------------------
+
+@app.route("/comprar-coins")
+@login_required
+def comprar_coins():
+    if session.get("user_type") != "empresa":
+        flash("Apenas empresas podem comprar coins.", "warning")
+        return redirect(url_for("index"))
+    
+    return render_template("comprar_coins.html")
+
+@app.route("/mp/criar-pagamento", methods=["POST"])
+@login_required
+def mp_criar_pagamento():
+    if session.get("user_type") != "empresa":
+        return {"error": "Unauthorized"}, 401
+
+    try:
+        data = request.json
+        pacote_id = data.get("pacote_id")
+        
+        # Definição dos pacotes (Hardcoded por enquanto, pode ir para o banco depois)
+        pacotes = {
+            "pacote_1": {"qtd": 50, "preco": 50.00, "titulo": "50 Coins"},
+            "pacote_2": {"qtd": 120, "preco": 100.00, "titulo": "120 Coins (Bônus)"},
+            "pacote_3": {"qtd": 300, "preco": 200.00, "titulo": "300 Coins (Mega Bônus)"}
+        }
+        
+        pacote = pacotes.get(pacote_id)
+        if not pacote:
+            return {"error": "Pacote inválido"}, 400
+
+        sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+        
+        # Cria a preferência de pagamento
+        preference_data = {
+            "items": [
+                {
+                    "id": pacote_id,
+                    "title": f"Pacote de Coins - {pacote['titulo']}",
+                    "quantity": 1,
+                    "currency_id": "BRL",
+                    "unit_price": pacote["preco"]
+                }
+            ],
+            "payer": {
+                "email": session.get("user_name") + "@empresa.com" # Idealmente usar o email real da empresa
+            },
+            "back_urls": {
+                "success": url_for("mp_success", _external=True),
+                "failure": url_for("mp_failure", _external=True),
+                "pending": url_for("mp_pending", _external=True)
+            },
+            "auto_return": "approved",
+            "metadata": {
+                "empresa_id": session.get("user_id"),
+                "coins_qtd": pacote["qtd"],
+                "pacote_id": pacote_id
+            },
+             "notification_url": url_for("mp_webhook", _external=True) # URL que o MP vai chamar
+        }
+
+        preference_response = sdk.preference().create(preference_data)
+        preference = preference_response["response"]
+        
+        return {"init_point": preference["init_point"], "preference_id": preference["id"]}, 200
+
+    except Exception as e:
+        print(f"Erro MP: {e}")
+        return {"error": str(e)}, 500
+
+@app.route("/mp/success")
+def mp_success():
+    flash("Pagamento processado! Seus coins serão creditados assim que o Mercado Pago confirmar.", "success")
+    return redirect(url_for("empresa_dashboard"))
+
+@app.route("/mp/failure")
+def mp_failure():
+    flash("Pagamento falhou ou foi cancelado.", "danger")
+    return redirect(url_for("comprar_coins"))
+
+@app.route("/mp/pending")
+def mp_pending():
+    flash("Pagamento em análise.", "info")
+    return redirect(url_for("empresa_dashboard"))
+
+@app.route("/mp/webhook", methods=["POST"])
+def mp_webhook():
+    try:
+        topic = request.args.get("topic") or request.args.get("type")
+        _id = request.args.get("id") or request.args.get("data.id")
+
+        if topic == "payment":
+            sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+            payment_info = sdk.payment().get(_id)
+            payment = payment_info["response"]
+            
+            status = payment.get("status")
+            external_ref = payment.get("external_reference") # Não usamos aqui, mas bom saber
+            metadata = payment.get("metadata", {})
+            
+            # O MP converte chaves de metadata para lowercase automaticamente!
+            empresa_id = metadata.get("empresa_id") 
+            coins_qtd = metadata.get("coins_qtd")
+            
+            # Verifica se já processamos essa transação para evitar duplicidade
+            # (Idealmente teríamos uma tabela de logs de webhook, mas vamos verificar pela TransacaoCoin)
+            existe = TransacaoCoin.query.filter_by(payment_id=str(_id)).first()
+            
+            if status == "approved" and not existe and empresa_id:
+                # 1. Creditar Coins
+                empresa = Empresa.query.get(empresa_id)
+                if empresa:
+                    empresa.saldo_coins += int(coins_qtd)
+                    
+                    # 2. Registrar Transação
+                    transacao = TransacaoCoin(
+                        empresa_id=empresa.id,
+                        quantidade=int(coins_qtd),
+                        descricao=f"Compra de {coins_qtd} coins via Mercado Pago",
+                        payment_id=str(_id),
+                        status="concluido"
+                    )
+                    
+                    db.session.add(transacao)
+                    db.session.commit()
+                    print(f"💰 {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
+            
+        return "", 200
+    except Exception as e:
+        print(f"Erro Webhook MP: {e}")
+        return str(e), 500
 
 # ------------------------------------------------------------------------
 # 🌟 NOVAS ROTAS STRIPE 🌟
