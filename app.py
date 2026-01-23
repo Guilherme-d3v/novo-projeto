@@ -482,6 +482,21 @@ def condominio_dashboard():
         
     return render_template("condominio_dashboard.html", c=condominio)
 
+
+@app.route("/dashboard/condominio/licitacoes")
+@login_required
+def condominio_licitacoes():
+    user_id = session.get("user_id")
+    if session.get("user_type") != "condominio":
+        flash("Acesso negado.", "danger")
+        return redirect(url_for("logout"))
+        
+    # Busca as licitações criadas por este condomínio
+    licitacoes = Licitacao.query.filter_by(condominio_id=user_id).order_by(Licitacao.created_at.desc()).all()
+    
+    return render_template("condominio_licitacoes.html", licitacoes=licitacoes)
+
+
 @app.route("/licitacoes/nova", methods=["GET", "POST"])
 @login_required
 def criar_licitacao():
