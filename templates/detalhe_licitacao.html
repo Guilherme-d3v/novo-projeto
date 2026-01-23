@@ -18,8 +18,13 @@
                     <span class="bg-blue-800 text-blue-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">{{ lic.tipo_servico }}</span>
                     <h1 class="text-3xl font-bold mt-3 mb-2">{{ lic.titulo }}</h1>
                     <div class="flex items-center text-blue-100 text-sm">
-                        <span class="mr-4"><i class="fas fa-building mr-1"></i> {{ lic.condominio.nome }}</span>
-                        <span><i class="fas fa-map-marker-alt mr-1"></i> {{ lic.condominio.cidade }} - {{ lic.condominio.estado }}</span>
+                        <!-- Verifica se condominio existe para evitar erro -->
+                        {% if lic.condominio %}
+                            <span class="mr-4"><i class="fas fa-building mr-1"></i> {{ lic.condominio.nome }}</span>
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> {{ lic.condominio.cidade }} - {{ lic.condominio.estado }}</span>
+                        {% else %}
+                            <span class="mr-4"><i class="fas fa-building mr-1"></i> Condomínio Desconhecido</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="bg-white text-blindado-blue p-4 rounded-lg text-center shadow-lg">
@@ -60,7 +65,8 @@
                                 </div>
                                 <div class="ml-3">
                                     <p class="text-sm text-red-700 font-bold">Saldo Insuficiente</p>
-                                    <p class="text-sm text-red-600">Você precisa de mais {{ lic.custo_coins - empresa.saldo_coins }} coins.</p>
+                                    <!-- Usei filtro default(0) para evitar erros com None -->
+                                    <p class="text-sm text-red-600">Você precisa de mais {{ (lic.custo_coins|default(0)) - (empresa.saldo_coins|default(0)) }} coins.</p>
                                     <a href="{{ url_for('comprar_coins') }}" class="text-sm font-bold text-red-700 underline mt-1 inline-block">Comprar Coins Agora</a>
                                 </div>
                             </div>
