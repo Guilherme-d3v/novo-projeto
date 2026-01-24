@@ -497,6 +497,25 @@ def condominio_licitacoes():
     return render_template("condominio_licitacoes.html", licitacoes=licitacoes)
 
 
+@app.route("/dashboard/condominio/licitacao/<int:licitacao_id>")
+@login_required
+def condominio_detalhe_licitacao(licitacao_id):
+    user_id = session.get("user_id")
+    if session.get("user_type") != "condominio":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    licitacao = Licitacao.query.get_or_404(licitacao_id)
+
+    # Garante que o condomínio só possa ver suas próprias licitações
+    if licitacao.condominio_id != user_id:
+        flash("Licitação não encontrada.", "danger")
+        return redirect(url_for("condominio_licitacoes"))
+
+    return render_template("condominio_detalhe_licitacao.html", licitacao=licitacao)
+
+
+
 @app.route("/licitacoes/nova", methods=["GET", "POST"])
 @login_required
 def criar_licitacao():
@@ -645,6 +664,20 @@ def empresa_dashboard():
     empresa = Empresa.query.get_or_404(user_id)
 
     return render_template("empresa_dashboard.html", e=empresa)
+
+
+@app.route("/dashboard/empresa/candidaturas")
+@login_required
+def empresa_candidaturas():
+    user_id = session.get("user_id")
+    if session.get("user_type") != "empresa":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    # Busca as candidaturas da empresa, fazendo join com a licitação para ter acesso aos detalhes
+    candidaturas = db.session.query(Candidatura).join(Licitacao).filter(Candidatura.empresa_id == user_id).order_by(Licitacao.created_at.desc()).all()
+
+    return render_template("empresa_candidaturas.html", candidaturas=candidaturas)
 
 
 @app.post("/admin/condominio/<int:_id>/<string:acao>")
@@ -1311,3 +1344,4 @@ def inject_user():
 
 if __name__ == "__main__":
     app.run(debug=True)
+

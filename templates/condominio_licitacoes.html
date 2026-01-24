@@ -15,7 +15,7 @@
             <ul class="divide-y divide-gray-200">
                 {% for lic in licitacoes %}
                 <li class="p-6 hover:bg-gray-50 transition duration-150">
-                    <a href="#"> {# Futuramente, link para detalhe da licitação do condomínio #}
+                    <a href="{{ url_for('condominio_detalhe_licitacao', licitacao_id=lic.id) }}">
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-xl font-semibold text-blindado-blue hover:underline">{{ lic.titulo }}</h2>
