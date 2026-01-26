@@ -1047,10 +1047,16 @@ def comprar_coins():
 @app.route("/mp/criar-pagamento", methods=["POST"])
 @login_required
 def mp_criar_pagamento():
+    user_id = session.get("user_id")
     if session.get("user_type") != "empresa":
         return {"error": "Unauthorized"}, 401
 
     try:
+        # Busca a empresa para pegar o e-mail real
+        empresa = Empresa.query.get(user_id)
+        if not empresa:
+            return {"error": "Empresa não encontrada"}, 404
+
         data = request.json
         pacote_id = data.get("pacote_id")
         
@@ -1079,7 +1085,7 @@ def mp_criar_pagamento():
                 }
             ],
             "payer": {
-                "email": session.get("user_name") + "@empresa.com" # Idealmente usar o email real da empresa
+                "email": empresa.email_comercial # <-- CORRIGIDO AQUI
             },
             "back_urls": {
                 "success": url_for("mp_success", _external=True),
