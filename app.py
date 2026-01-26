@@ -1052,15 +1052,9 @@ def mp_criar_pagamento():
         return {"error": "Unauthorized"}, 401
 
     try:
-        # Busca a empresa para pegar o e-mail real
-        empresa = Empresa.query.get(user_id)
-        if not empresa:
-            return {"error": "Empresa não encontrada"}, 404
-
         data = request.json
         pacote_id = data.get("pacote_id")
         
-        # Definição dos pacotes (Hardcoded por enquanto, pode ir para o banco depois)
         pacotes = {
             "pacote_1": {"qtd": 50, "preco": 50.00, "titulo": "50 Coins"},
             "pacote_2": {"qtd": 120, "preco": 100.00, "titulo": "120 Coins (Bônus)"},
@@ -1073,32 +1067,15 @@ def mp_criar_pagamento():
 
         sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
         
-        # Cria a preferência de pagamento
+        # Cria a preferência de pagamento (VERSÃO MÍNIMA PARA TESTE)
         preference_data = {
             "items": [
                 {
-                    "id": pacote_id,
                     "title": f"Pacote de Coins - {pacote['titulo']}",
                     "quantity": 1,
-                    "currency_id": "BRL",
                     "unit_price": pacote["preco"]
                 }
-            ],
-            "payer": {
-                "email": empresa.email_comercial
-            },
-            "back_urls": {
-                "success": url_for("mp_success", _external=True),
-                "failure": url_for("mp_failure", _external=True),
-                "pending": url_for("mp_pending", _external=True)
-            },
-            "auto_return": "approved",
-            "metadata": {
-                "empresa_id": user_id,
-                "coins_qtd": pacote["qtd"],
-                "pacote_id": pacote_id
-            },
-            "notification_url": url_for("mp_webhook", _external=True)
+            ]
         }
 
         preference_response = sdk.preference().create(preference_data)
