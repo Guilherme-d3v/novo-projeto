@@ -126,5 +126,22 @@
             <p class="text-sm md:text-base text-gray-700">{{ c.observacoes }}</p>
         {% endif %}
     </div>
+
+    <div class="bg-blue-50 p-4 md:p-6 rounded-lg border border-blue-200">
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Licitações e Serviços</h2>
+    <p class="text-sm text-gray-600 mb-4">Publique suas necessidades e receba propostas de empresas certificadas.</p>
+    <div class="flex flex-col gap-2">
+        <a href="{{ url_for('criar_licitacao') }}" class="bg-blindado-blue text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blindado-dark transition duration-300 text-center">
+            <i class="fas fa-plus-circle mr-2"></i> Criar Nova Licitação
+        </a>
+        <a href="{{ url_for('condominio_licitacoes') }}" class="bg-white text-blindado-blue border border-blindado-blue font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-50 transition duration-300 text-center">
+            Ver Minhas Licitações
+        </a>
+        <a href="{{ url_for('pricing') }}" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300 text-center">
+            <i class="fas fa-credit-card mr-2"></i> Ver Planos de Assinatura
+        </a>
+    </div>
+</div>
+
 </div>
 {% endblock %}
