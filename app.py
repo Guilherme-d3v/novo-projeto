@@ -1085,7 +1085,7 @@ def mp_criar_pagamento():
                 }
             ],
             "payer": {
-                "email": empresa.email_comercial # <-- CORRIGIDO AQUI
+                "email": empresa.email_comercial
             },
             "back_urls": {
                 "success": url_for("mp_success", _external=True),
@@ -1094,20 +1094,24 @@ def mp_criar_pagamento():
             },
             "auto_return": "approved",
             "metadata": {
-                "empresa_id": session.get("user_id"),
+                "empresa_id": user_id,
                 "coins_qtd": pacote["qtd"],
                 "pacote_id": pacote_id
             },
-             "notification_url": url_for("mp_webhook", _external=True) # URL que o MP vai chamar
+            "notification_url": url_for("mp_webhook", _external=True)
         }
 
         preference_response = sdk.preference().create(preference_data)
-        preference = preference_response["response"]
         
-        return {"init_point": preference["init_point"], "preference_id": preference["id"]}, 200
+        if preference_response.get("status") in [200, 201]:
+            preference = preference_response["response"]
+            return {"init_point": preference["init_point"], "preference_id": preference["id"]}, 200
+        else:
+            print(f"Erro MP - Resposta da API: {preference_response}")
+            return {"error": "Falha ao criar preferência de pagamento."}, 500
 
     except Exception as e:
-        print(f"Erro MP: {e}")
+        print(f"Erro MP - Exceção inesperada: {e}")
         return {"error": str(e)}, 500
 
 @app.route("/mp/success")
