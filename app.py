@@ -1108,50 +1108,75 @@ def mp_pending():
 
 @app.route("/mp/webhook", methods=["POST"])
 def mp_webhook():
+    print("--- MERCADO PAGO WEBHOOK RECEIVED ---")
+    print(f"Headers: {request.headers}")
+    print(f"Body: {request.get_data(as_text=True)}")
+    
     try:
-        topic = request.args.get("topic") or request.args.get("type")
-        _id = request.args.get("id") or request.args.get("data.id")
+        payment_id = None
+        # Prioriza JSON, mas faz fallback para Form-data
+        data = request.json if request.is_json else request.form.to_dict()
 
-        if topic == "payment":
-            sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
-            payment_info = sdk.payment().get(_id)
-            payment = payment_info["response"]
-            
-            status = payment.get("status")
-            external_ref = payment.get("external_reference") # Não usamos aqui, mas bom saber
-            metadata = payment.get("metadata", {})
-            
-            # O MP converte chaves de metadata para lowercase automaticamente!
-            empresa_id = metadata.get("empresa_id") 
-            coins_qtd = metadata.get("coins_qtd")
-            
-            # Verifica se já processamos essa transação para evitar duplicidade
-            # (Idealmente teríamos uma tabela de logs de webhook, mas vamos verificar pela TransacaoCoin)
-            existe = TransacaoCoin.query.filter_by(payment_id=str(_id)).first()
-            
-            if status == "approved" and not existe and empresa_id:
-                # 1. Creditar Coins
-                empresa = Empresa.query.get(empresa_id)
-                if empresa:
-                    empresa.saldo_coins += int(coins_qtd)
-                    
-                    # 2. Registrar Transação
-                    transacao = TransacaoCoin(
-                        empresa_id=empresa.id,
-                        quantidade=int(coins_qtd),
-                        descricao=f"Compra de {coins_qtd} coins via Mercado Pago",
-                        payment_id=str(_id),
-                        status="concluido"
-                    )
-                    
-                    db.session.add(transacao)
-                    db.session.commit()
-                    print(f"💰 {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
-            
-        return "", 200
+        print(f"Parsed Data: {data}")
+
+        # Novo formato de notificação (Webhook)
+        if data and 'action' in data and 'payment' in data.get('action', ''):
+            payment_id = data.get('data', {}).get('id')
+        # Formato de notificação antiga (IPN)
+        elif data and 'topic' in data and data.get('topic') == 'payment':
+            payment_id = data.get('id')
+        # Fallback final para parâmetros na URL
+        elif request.args.get('topic') == 'payment':
+            payment_id = request.args.get('id')
+        
+        if not payment_id:
+            print("Webhook recebido, mas não é uma notificação de pagamento ou não contém ID.")
+            return "Notification ignored", 200
+
+        print(f"Processando pagamento ID: {payment_id}")
+        sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+        payment_info = sdk.payment().get(payment_id)
+        
+        if not payment_info or payment_info.get("status") not in [200, 201]:
+             print(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
+             return "Failed to get payment info", 500
+
+        payment = payment_info["response"]
+        
+        status = payment.get("status")
+        metadata = payment.get("metadata", {})
+        
+        empresa_id = metadata.get("empresa_id") 
+        coins_qtd = metadata.get("coins_qtd")
+        
+        existe = TransacaoCoin.query.filter_by(payment_id=str(payment_id)).first()
+        
+        if status == "approved" and not existe and empresa_id and coins_qtd:
+            empresa = Empresa.query.get(empresa_id)
+            if empresa:
+                saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
+                empresa.saldo_coins = saldo_atual + int(coins_qtd)
+                
+                transacao = TransacaoCoin(
+                    empresa_id=empresa.id,
+                    quantidade=int(coins_qtd),
+                    descricao=f"Compra de {coins_qtd} coins via Mercado Pago",
+                    payment_id=str(payment_id),
+                    status="concluido"
+                )
+                
+                db.session.add(transacao)
+                db.session.commit()
+                print(f"💰 SUCESSO: {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
+        else:
+            print(f"Pagamento não processado. Status: {status}, Já existe: {bool(existe)}, ID Empresa: {empresa_id}, Qtd Coins: {coins_qtd}")
+
+        return "OK", 200
+        
     except Exception as e:
-        print(f"Erro Webhook MP: {e}")
-        return str(e), 500
+        print(f"❌ Erro fatal no Webhook MP: {e}")
+        # Retornar 500 para que o MP possa tentar novamente.
+        return "Internal Server Error", 500
 
 # ------------------------------------------------------------------------
 # 🌟 NOVAS ROTAS STRIPE 🌟
