@@ -1,65 +1,71 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="w-full max-w-6xl mx-auto px-4 py-8">
-    <div class="text-center mb-8">
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Adquirir Coins</h2>
-        <p class="text-gray-600">Aumente suas chances participando de novas licitações de condomínios.</p>
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Adquirir Coins</h2>
+        <p class="text-muted">Aumente suas chances participando de novas licitações de condomínios.</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
         <!-- Pacote 1 -->
-        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 text-center">
-            <div class="mb-4">
-                <i class="fas fa-coins text-yellow-500 text-4xl"></i>
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm text-center">
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-coin text-warning fs-1"></i>
+                    </div>
+                    <h3 class="card-title">Pacote Básico</h3>
+                    <div class="display-5 my-3">50 <small class="fs-6 text-muted">coins</small></div>
+                    <p class="text-muted">Ideal para pequenas empresas que estão começando agora.</p>
+                    <hr>
+                    <div class="fs-4 fw-bold mb-4">R$ 50,00</div>
+                    <button onclick="checkout('pacote_1')" class="btn btn-outline-primary w-100 rounded-pill">Comprar Agora</button>
+                </div>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Pacote Básico</h3>
-            <div class="text-3xl font-bold text-gray-800 my-3">50 <span class="text-base text-gray-500">coins</span></div>
-            <p class="text-gray-600 mb-4">Ideal para pequenas empresas que estão começando agora.</p>
-            <hr class="my-4">
-            <div class="text-2xl font-bold text-gray-800 mb-4">R$ 50,00</div>
-            <button onclick="checkout('pacote_1')" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">
-                Comprar Agora
-            </button>
         </div>
 
         <!-- Pacote 2 (Destaque) -->
-        <div class="bg-blue-50 p-6 rounded-lg shadow-md relative">
-            <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1 rounded-full">MAIS POPULAR</span>
-            <div class="mb-4 text-blue-600">
-                <i class="fas fa-star text-4xl"></i>
+        <div class="col">
+            <div class="card h-100 border-primary shadow text-center position-relative">
+                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary">MAIS POPULAR</span>
+                <div class="card-body p-4">
+                    <div class="mb-3 text-primary">
+                        <i class="bi bi-star-fill fs-1"></i>
+                    </div>
+                    <h3 class="card-title">Pacote Pro</h3>
+                    <div class="display-5 my-3">120 <small class="fs-6 text-muted">coins</small></div>
+                    <p class="text-muted">Ótimo custo-benefício com <span class="badge bg-success">20% de bônus</span>.</p>
+                    <hr>
+                    <div class="fs-4 fw-bold mb-4">R$ 100,00</div>
+                    <button onclick="checkout('pacote_2')" class="btn btn-primary w-100 rounded-pill">Comprar Agora</button>
+                </div>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Pacote Pro</h3>
-            <div class="text-3xl font-bold text-gray-800 my-3">120 <span class="text-base text-gray-500">coins</span></div>
-            <p class="text-gray-600 mb-4">Ótimo custo-benefício com <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">20% de bônus</span>.</p>
-            <hr class="my-4">
-            <div class="text-2xl font-bold text-gray-800 mb-4">R$ 100,00</div>
-            <button onclick="checkout('pacote_2')" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
-                Comprar Agora
-            </button>
         </div>
 
         <!-- Pacote 3 -->
-        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 text-center">
-            <div class="mb-4 text-yellow-500">
-                <i class="fas fa-gem text-4xl"></i>
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm text-center">
+                <div class="card-body p-4">
+                    <div class="mb-3 text-warning">
+                        <i class="bi bi-gem fs-1"></i>
+                    </div>
+                    <h3 class="card-title">Pacote Enterprise</h3>
+                    <div class="display-5 my-3">300 <small class="fs-6 text-muted">coins</small></div>
+                    <p class="text-muted">Máxima exposição com <span class="badge bg-success">50% de bônus</span>.</p>
+                    <hr>
+                    <div class="fs-4 fw-bold mb-4">R$ 200,00</div>
+                    <button onclick="checkout('pacote_3')" class="btn btn-outline-primary w-100 rounded-pill">Comprar Agora</button>
+                </div>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Pacote Enterprise</h3>
-            <div class="text-3xl font-bold text-gray-800 my-3">300 <span class="text-base text-gray-500">coins</span></div>
-            <p class="text-gray-600 mb-4">Máxima exposição com <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">50% de bônus</span>.</p>
-            <hr class="my-4">
-            <div class="text-2xl font-bold text-gray-800 mb-4">R$ 200,00</div>
-            <button onclick="checkout('pacote_3')" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">
-                Comprar Agora
-            </button>
         </div>
     </div>
 
-    <div class="mt-8 text-center p-6 bg-gray-50 rounded-lg shadow-sm">
-        <h5 class="text-lg font-bold text-gray-800 mb-3">Pagamento Seguro via Mercado Pago</h5>
-        <div class="flex justify-center space-x-4 opacity-70">
-            <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-256.png" class="h-8" alt="Mercado Pago">
-            <img src="https://logospng.org/download/pix/logo-pix-256.png" class="h-8" alt="PIX">
+    <div class="mt-5 text-center p-4 bg-light rounded shadow-sm">
+        <h5 class="mb-3">Pagamento Seguro via Mercado Pago</h5>
+        <div class="d-flex justify-content-center gap-3 grayscale opacity-50">
+            <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-256.png" height="30" alt="Mercado Pago">
+            <img src="https://logospng.org/download/pix/logo-pix-256.png" height="30" alt="PIX">
         </div>
     </div>
 </div>
