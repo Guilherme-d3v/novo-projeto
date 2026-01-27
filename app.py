@@ -4,6 +4,7 @@ from uuid import uuid4
 from functools import wraps
 import secrets
 import string
+import logging
 
 from flask import (
     Flask, render_template, request, redirect,
@@ -1020,7 +1021,8 @@ def uploaded_file(filename):
 
 @app.errorhandler(500)
 def internal_error(error):
-    return f"Erro interno: {error}", 500
+    app.logger.error(f"Erro interno não tratado: {error}", exc_info=True)
+    return "Ocorreu um erro interno no servidor.", 500
 
 def create_tables():
     """Criar tabelas manualmente"""
@@ -1135,10 +1137,12 @@ def mp_webhook():
 
         print(f"Processando pagamento ID: {payment_id}")
         sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
-        payment_info = sdk.payment().get(payment_id)
-        
-        if not payment_info or payment_info.get("status") not in [200, 201]:
-             print(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
+                                payment_info = sdk.payment().get(payment_id)
+                        
+                                # Logando a resposta completa da API para depuração
+                                app.logger.info(f"Resposta da API do Mercado Pago para o payment_id {payment_id}: {payment_info}")
+                        
+                                if not payment_info or payment_info.get("status") not in [200, 201]:             print(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
              return "Failed to get payment info", 500
 
         payment = payment_info["response"]
@@ -1174,7 +1178,7 @@ def mp_webhook():
         return "OK", 200
         
     except Exception as e:
-        print(f"❌ Erro fatal no Webhook MP: {e}")
+        app.logger.error("❌ Erro fatal no Webhook MP", exc_info=True)
         # Retornar 500 para que o MP possa tentar novamente.
         return "Internal Server Error", 500
 
