@@ -1109,7 +1109,6 @@ def mp_criar_pagamento():
             }
         }
 
-        app.logger.error(f"DADOS DE PREFERÊNCIA ENVIADOS PARA O MP: {preference_data}")
         preference_response = sdk.preference().create(preference_data)
 
         if preference_response.get("status") in [200, 201]:
