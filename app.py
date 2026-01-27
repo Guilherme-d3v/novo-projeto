@@ -1139,11 +1139,22 @@ def mp_webhook():
         sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
         payment_info = sdk.payment().get(payment_id)
                         
-                                # Logando a resposta completa da API para depuração
-        app.logger.info(f"Resposta da API do Mercado Pago para o payment_id {payment_id}: {payment_info}")
+                                # Logando a resposta da API para depuração (de forma segura)
+        if isinstance(payment_info, dict):
+            app.logger.warning(f"Resposta da API (dict): {payment_info}")
+        else:
+            app.logger.warning(f"Resposta da API (tipo do objeto): {type(payment_info)}")
+            try:
+                # Tenta converter para dict se for um objeto
+                app.logger.warning(f"Resposta da API (vars): {vars(payment_info)}")
+            except TypeError:
+                app.logger.warning("Não foi possível converter a resposta da API em dict.")
                         
-        if not payment_info or payment_info.get("status") not in [200, 201]:             print(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
-        return "Failed to get payment info", 500
+                if not payment_info or payment_info.get("status") not in [200, 201]:
+                        
+                     app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP. A resposta foi: {payment_info}")
+                        
+                     return "Failed to get payment info", 500
 
         payment = payment_info["response"]
         
