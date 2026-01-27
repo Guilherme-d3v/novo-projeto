@@ -30,7 +30,7 @@ import mercadopago # 🌟 IMPORT DO MERCADO PAGO 🌟
 # -----------------------------
 
 # Dependências LOCAIS que você precisa garantir que existam
-from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin
+from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin, TransacaoPlano
 from config import Config
 
 # Carregar variáveis de ambiente PRIMEIRO
@@ -1216,9 +1216,7 @@ def mp_webhook():
                 
                 elif condominio_id and plano_assinatura: # Processamento de planos para Condomínios
                     # Verifica se o pagamento já foi processado para evitar duplicidade
-                    # Podemos usar a TransacaoCoin para planos também, ou criar uma nova tabela para Assinaturas
-                    # Por simplicidade, vamos usar aqui como se fosse uma transação de "compra de plano"
-                    existe_transacao = TransacaoCoin.query.filter_by(payment_id=str(payment_id), empresa_id=None, condominio_id=condominio_id).first()
+                    existe_transacao = TransacaoPlano.query.filter_by(payment_id=str(payment_id)).first()
                     if existe_transacao:
                         app.logger.warning(f"Pagamento ID {payment_id} (plano) já processado anteriormente.")
                         return "OK", 200
@@ -1230,11 +1228,11 @@ def mp_webhook():
                         # Define a expiração para um mês a partir de agora
                         condominio.subscription_expires_at = datetime.utcnow() + timedelta(days=30)
                         
-                        # Registra a transação do plano
-                        transacao_plano = TransacaoCoin( # Reutilizando TransacaoCoin para o plano
+                        # Registra a transação do plano usando o novo modelo TransacaoPlano
+                        transacao_plano = TransacaoPlano(
                             condominio_id=condominio.id,
-                            quantidade=int(payment.get("transaction_amount", 0)), # Salva o valor da compra
-                            descricao=f"Compra do plano {plano_assinatura} via Mercado Pago",
+                            plano_id=plano_assinatura,
+                            valor=float(payment.get("transaction_amount", 0.0)),
                             payment_id=str(payment_id),
                             status="concluido"
                         )
@@ -1249,21 +1247,7 @@ def mp_webhook():
             else:
                 app.logger.warning(f"Pagamento ID {payment_id} não processado. Status: {status}")
             
-                        
-            
-                        # Garante que sempre haja um retorno para o tópico 'payment'
-            
         return "OK", 200 
-            
-                    
-            
-                    # Se o tópico não for 'payment', ainda precisamos retornar algo.
-            
-                    # Por exemplo, para merchant_order, ou outros tópicos que o MP possa enviar.
-            
-        return "OK", 200 # <--- Adicionado retorno padrão aqui
-            
-                    
             
     except Exception as e:
         app.logger.error(f"❌ Erro fatal no Webhook MP: {e}", exc_info=True)

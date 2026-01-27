@@ -63,6 +63,13 @@ class Condominio(db.Model):
             return False
         return check_password_hash(self.password_hash, password)
 
+    @property
+    def subscription_status(self):
+        """Calcula o status da assinatura dinamicamente."""
+        if self.plano_assinatura and self.subscription_expires_at and self.subscription_expires_at > datetime.utcnow():
+            return 'active'
+        return 'inactive'
+
 
 class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -163,3 +170,23 @@ class TransacaoCoin(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     empresa = db.relationship('Empresa', backref=db.backref('transacoes', lazy=True))
+
+
+class TransacaoPlano(db.Model):
+    """
+    Registra o histórico de compras de planos de assinatura pelos condomínios.
+    """
+    __tablename__ = 'transacao_plano'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    condominio_id = db.Column(db.Integer, db.ForeignKey('condominio.id'), nullable=False)
+    
+    plano_id = db.Column(db.String(50), nullable=False) # 'basico', 'avancado', 'premium'
+    valor = db.Column(db.Float, nullable=False) # O valor efetivamente pago
+    
+    payment_id = db.Column(db.String(100), nullable=True) # ID do pagamento no MP
+    status = db.Column(db.String(20), default="concluido") # pendente, concluido, falhou
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    condominio = db.relationship('Condominio', backref=db.backref('transacoes_plano', lazy=True))
