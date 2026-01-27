@@ -1,5 +1,5 @@
 import os
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from dotenv import load_dotenv
 
 # Garantir que as variáveis de ambiente sejam carregadas, embora já esteja em app.py
@@ -70,14 +70,8 @@ class Config:
     BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:5000")
     
     # --- Adicionado para forçar o domínio correto na geração de URLs externas ---
-    # Extrai o esquema e o nome do servidor da BASE_URL
-    # Ex: https://condblindado.com.br -> ('https', 'condblindado.com.br')
-    if "://" in BASE_URL:
-        scheme, domain = BASE_URL.split("://")
-        if ":" in domain:
-            domain = domain.split(":")[0]
-        SERVER_NAME = domain
-        PREFERRED_URL_SCHEME = scheme
-    else:
-        SERVER_NAME = BASE_URL # Fallback para o caso de não ter esquema
-        PREFERRED_URL_SCHEME = 'https'
+    # Extrai o esquema e o nome do servidor da BASE_URL para SERVER_NAME e PREFERRED_URL_SCHEME
+    _parsed_url = urlparse(BASE_URL)
+    SERVER_NAME = _parsed_url.netloc.split(':')[0] if ':' in _parsed_url.netloc else _parsed_url.netloc
+    PREFERRED_URL_SCHEME = _parsed_url.scheme
+    # --- Fim das configurações de URL externa ---
