@@ -68,3 +68,16 @@ class Config:
     
     # URL Base da aplicação para gerar links externos
     BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:5000")
+    
+    # --- Adicionado para forçar o domínio correto na geração de URLs externas ---
+    # Extrai o esquema e o nome do servidor da BASE_URL
+    # Ex: https://condblindado.com.br -> ('https', 'condblindado.com.br')
+    if "://" in BASE_URL:
+        scheme, domain = BASE_URL.split("://")
+        if ":" in domain:
+            domain = domain.split(":")[0]
+        SERVER_NAME = domain
+        PREFERRED_URL_SCHEME = scheme
+    else:
+        SERVER_NAME = BASE_URL # Fallback para o caso de não ter esquema
+        PREFERRED_URL_SCHEME = 'https'
