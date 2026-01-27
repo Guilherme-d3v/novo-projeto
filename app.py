@@ -5,7 +5,14 @@ from functools import wraps
 import secrets
 import string
 import logging
+import sys # Import sys for logging to stderr
 
+# Configura o logger para Flask
+# Isso garante que as mensagens de log (INFO, WARNING, ERROR) sejam exibidas
+# e capturadas pelo systemd/Gunicorn.
+logging.basicConfig(level=logging.INFO, stream=sys.stderr,
+                    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+# ... (rest of the imports)
 from flask import (
     Flask, render_template, request, redirect,
     url_for, flash, send_from_directory, session
@@ -1137,6 +1144,7 @@ def mp_pending():
 
 @app.route("/mp/webhook", methods=["POST"])
 def mp_webhook():
+    app.logger.info("-> mp_webhook function entered.")
     data = request.json if request.is_json else request.form.to_dict()
     app.logger.warning(f"Webhook MP recebido: {data}")
 
@@ -1145,17 +1153,29 @@ def mp_webhook():
         topic = data.get('topic')
         
         if topic == 'payment':
+            # Tenta extrair o payment_id de diferentes estruturas de webhook
             payment_id = data.get('data', {}).get('id')
+            if not payment_id: # Se não encontrou no 'data.id', tenta no 'resource'
+                payment_id = data.get('resource')
+                if payment_id and "http" in payment_id: # Se for uma URL, extrai o ID do final
+                    try:
+                        payment_id = payment_id.split('/')[-1]
+                    except Exception:
+                        payment_id = None
+            
             if not payment_id:
-                app.logger.info("Webhook de pagamento ignorado (não contém ID).")
+                app.logger.info("Webhook de pagamento ignorado (não contém ID de pagamento válido).")
                 return "Notification ignored", 200
 
             app.logger.info(f"Processando pagamento ID: {payment_id}")
+            app.logger.info(f"Inicializando SDK do Mercado Pago com token: {app.config['MP_ACCESS_TOKEN']}")
             sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+            app.logger.info(f"Consultando detalhes do pagamento {payment_id} no MP.")
             payment_info_response = sdk.payment().get(payment_id)
+            app.logger.info(f"Resposta da consulta de pagamento: {payment_info_response}")
             
             if not payment_info_response or payment_info_response.get("status") != 200:
-                app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
+                app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP. Resposta: {payment_info_response}")
                 return "Failed to get payment info", 500
 
             payment = payment_info_response["response"]
