@@ -18,7 +18,7 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from dotenv import load_dotenv
 
 # 🌟 NOVO IMPORT DO STRIPE 🌟
-import stripe
+
 import mercadopago # 🌟 IMPORT DO MERCADO PAGO 🌟
 # -----------------------------
 
@@ -55,9 +55,7 @@ mail = Mail(app)
 
 serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
-# 🌟 INICIALIZAÇÃO DO STRIPE 🌟
-# Configura a chave secreta globalmente para a API
-stripe.api_key = app.config["STRIPE_SECRET_KEY"]
+
 
 # 🌟 INICIALIZAÇÃO DO MERCADO PAGO 🌟
 # sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"]) # Inicializa apenas quando necessário ou globalmente
@@ -1143,243 +1141,247 @@ def mp_webhook():
     app.logger.warning(f"Webhook MP recebido: {data}")
 
     try:
-        # Extrai o ID do pagamento da notificação
-        payment_id = None
-        if data and data.get('type') == 'payment':
+        # Verifica o tipo de notificação
+        topic = data.get('topic')
+        
+        if topic == 'payment':
             payment_id = data.get('data', {}).get('id')
-        
-        if not payment_id:
-            app.logger.info("Webhook ignorado (não é de pagamento ou não contém ID).")
-            return "Notification ignored", 200
+            if not payment_id:
+                app.logger.info("Webhook de pagamento ignorado (não contém ID).")
+                return "Notification ignored", 200
 
-        # Busca os detalhes do pagamento na API do Mercado Pago
-        app.logger.info(f"Processando pagamento ID: {payment_id}")
-        sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
-        payment_info_response = sdk.payment().get(payment_id)
-        
-        app.logger.warning(f"Resposta da API do MP: {payment_info_response}")
+            app.logger.info(f"Processando pagamento ID: {payment_id}")
+            sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+            payment_info_response = sdk.payment().get(payment_id)
+            
+            if not payment_info_response or payment_info_response.get("status") != 200:
+                app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
+                return "Failed to get payment info", 500
 
-        if not payment_info_response or payment_info_response.get("status") != 200:
-             app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
-             return "Failed to get payment info", 500
+            payment = payment_info_response["response"]
+            status = payment.get("status")
+            metadata = payment.get("metadata", {})
+            empresa_id = metadata.get("empresa_id") 
+            coins_qtd = metadata.get("coins_qtd")
+            
+            if status == "approved" and empresa_id and coins_qtd:
+                existe = TransacaoCoin.query.filter_by(payment_id=str(payment_id)).first()
+                if existe:
+                    app.logger.warning(f"Pagamento ID {payment_id} já processado anteriormente.")
+                    return "OK", 200
 
-        payment = payment_info_response["response"]
-        
-        # Extrai os dados relevantes do pagamento
-        status = payment.get("status")
-        metadata = payment.get("metadata", {})
-        empresa_id = metadata.get("empresa_id") 
-        coins_qtd = metadata.get("coins_qtd")
-        
-        # Verifica se o pagamento foi aprovado e se os metadados existem
-        if status == "approved" and empresa_id and coins_qtd:
-            # Verifica se esta transação já foi processada para evitar duplicidade
-            existe = TransacaoCoin.query.filter_by(payment_id=str(payment_id)).first()
-            if existe:
-                app.logger.warning(f"Pagamento ID {payment_id} já processado anteriormente.")
-                return "OK", 200
-
-            empresa = Empresa.query.get(empresa_id)
-            if empresa:
-                # Adiciona os coins e registra a transação
-                saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
-                empresa.saldo_coins = saldo_atual + int(coins_qtd)
-                
-                transacao = TransacaoCoin(
-                    empresa_id=empresa.id,
-                    quantidade=int(coins_qtd),
-                    descricao=f"Compra de {coins_qtd} coins via Mercado Pago",
-                    payment_id=str(payment_id),
-                    status="concluido"
-                )
-                
-                db.session.add(transacao)
-                db.session.commit()
-                app.logger.info(f"💰 SUCESSO: {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
+                empresa = Empresa.query.get(empresa_id)
+                if empresa:
+                    saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
+                    empresa.saldo_coins = saldo_atual + int(coins_qtd)
+                    
+                    transacao = TransacaoCoin(
+                        empresa_id=empresa.id,
+                        quantidade=int(coins_qtd),
+                        descricao=f"Compra de {coins_qtd} coins via Mercado Pago",
+                        payment_id=str(payment_id),
+                        status="concluido"
+                    )
+                    
+                    db.session.add(transacao)
+                    db.session.add(empresa) # Salvar a empresa com o saldo atualizado
+                    db.session.commit()
+                    app.logger.info(f"💰 SUCESSO: {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
+                else:
+                    app.logger.error(f"Empresa ID {empresa_id} não encontrada no banco de dados para o pagamento {payment_id}.")
             else:
-                app.logger.error(f"Empresa ID {empresa_id} não encontrada no banco de dados para o pagamento {payment_id}.")
-        else:
-            # Loga por que o pagamento não foi processado
-            app.logger.warning(f"Pagamento ID {payment_id} não processado. Status: {status}, ID Empresa: {empresa_id}, Qtd Coins: {coins_qtd}")
+                app.logger.warning(f"Pagamento ID {payment_id} não processado. Status: {status}, ID Empresa: {empresa_id}, Qtd Coins: {coins_qtd}")
+
+        elif topic == 'preapproval':
+            preapproval_id = data.get('data', {}).get('id')
+            if not preapproval_id:
+                app.logger.info("Webhook de preapproval ignorado (não contém ID).")
+                return "Notification ignored", 200
+            
+            app.logger.info(f"Processando preapproval ID: {preapproval_id}")
+            sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+            preapproval_info_response = sdk.preapproval().get(preapproval_id)
+
+            if not preapproval_info_response or preapproval_info_response.get("status") != 200:
+                app.logger.error(f"Erro ao consultar o preapproval {preapproval_id} na API do MP.")
+                return "Failed to get preapproval info", 500
+            
+            preapproval = preapproval_info_response["response"]
+            status = preapproval.get("status") # authorized, pending, cancelled, paused, expired
+            external_reference = preapproval.get("external_reference")
+            
+            # Extrair condominio_id e plano_assinatura da external_reference ou metadata
+            condominio_id = None
+            plano_assinatura = None
+            if external_reference and external_reference.startswith("condominio-"):
+                parts = external_reference.split('-')
+                if len(parts) >= 3:
+                    try:
+                        condominio_id = int(parts[1])
+                        plano_assinatura = parts[2]
+                    except ValueError:
+                        app.logger.error(f"External reference mal formatada: {external_reference}")
+                        
+            # Fallback para metadata
+            if not condominio_id and preapproval.get("metadata"):
+                condominio_id = preapproval["metadata"].get("condominio_id")
+                plano_assinatura = preapproval["metadata"].get("plano_assinatura")
+            
+            if condominio_id:
+                condominio = Condominio.query.get(condominio_id)
+                if condominio:
+                    condominio.subscription_status = status
+                    condominio.mp_preapproval_id = preapproval_id
+                    
+                    if status == "authorized":
+                        # Calcula a data de expiração da assinatura (1 mês a partir de agora)
+                        from datetime import datetime, timedelta
+                        condominio.plano_assinatura = plano_assinatura # Garante que o plano esteja salvo
+                        condominio.subscription_expires_at = datetime.utcnow() + timedelta(days=30) # Assumindo planos mensais
+                        app.logger.info(f"✅ Assinatura AUTORIZADA para Condomínio ID {condominio_id}. Expira em: {condominio.subscription_expires_at}")
+                    elif status == "cancelled" or status == "expired":
+                        condominio.plano_assinatura = None
+                        condominio.subscription_expires_at = None
+                        app.logger.warning(f"❌ Assinatura CANCELADA/EXPIRADA para Condomínio ID {condominio_id}.")
+
+                    db.session.add(condominio)
+                    db.session.commit()
+                else:
+                    app.logger.error(f"Condomínio ID {condominio_id} não encontrado para preapproval {preapproval_id}.")
+            else:
+                app.logger.warning(f"Condomínio ID não encontrado nos metadados/referência externa para preapproval {preapproval_id}")
 
         return "OK", 200
         
     except Exception as e:
         app.logger.error(f"❌ Erro fatal no Webhook MP: {e}", exc_info=True)
-        # Retornar 500 para que o MP possa tentar novamente.
         return "Internal Server Error", 500
 
-# ------------------------------------------------------------------------
-# 🌟 NOVAS ROTAS STRIPE 🌟
-# ------------------------------------------------------------------------
-
-@app.route("/create-checkout-session/<int:_id>", methods=["POST"])
+@app.route("/mp/criar-assinatura-recorrente", methods=["POST"])
 @login_required
-def create_checkout_session(_id):
-    user_type = session.get("user_type")
-    
-    # Validação de segurança: o usuário logado deve ser o proprietário do ID
-    if user_type != "condominio" or session.get("user_id") != _id:
-        flash("Ação não permitida.", "danger")
-        return redirect(url_for("logout"))
-    
-    condominio = Condominio.query.get_or_404(_id)
-    
-    try:
-        # 1. Cria ou recupera o Customer ID do Stripe
-        if not condominio.stripe_customer_id:
-            customer = stripe.Customer.create(
-                email=condominio.email,
-                name=condominio.nome,
-                metadata={'condominio_id': condominio.id}
-            )
-            condominio.stripe_customer_id = customer.id
-            db.session.commit()
-        
-        # 2. Cria a Checkout Session
-        checkout_session = stripe.checkout.Session.create(
-            customer=condominio.stripe_customer_id,
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price": app.config["STRIPE_PRICE_ID_MONTHLY"],
-                    "quantity": 1,
-                },
-            ],
-            mode="subscription",
-            # Redirecionamento após sucesso/cancelamento
-            success_url=url_for("success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}",
-            cancel_url=url_for("cancel", _external=True),
-        )
-        
-        # Redireciona o usuário para a página de pagamento do Stripe
-        return redirect(checkout_session.url, code=303)
-        
-    except stripe.error.StripeError as e:
-        # Erros específicos do Stripe (ex: chave inválida, preço não existe)
-        flash(f"Erro ao criar sessão de checkout: {str(e)}", "danger")
-        return redirect(url_for("condominio_dashboard"))
-    except Exception as e:
-        # Outros erros de sistema/banco de dados
-        flash(f"Ocorreu um erro inesperado: {str(e)}", "danger")
-        return redirect(url_for("condominio_dashboard"))
+def mp_criar_assinatura_recorrente():
+    condominio_id = session.get("user_id")
+    if session.get("user_type") != "condominio":
+        return {"error": "Acesso não autorizado"}, 401
 
-
-@app.route("/success")
-@login_required # Garante que apenas um usuário logado acesse
-def success():
-    # Nota: O status final do pagamento é definido pelo Webhook, não por esta rota.
-    flash("Assinatura iniciada com sucesso! Verifique seu dashboard para o status final.", "success")
-    return redirect(url_for("condominio_dashboard"))
-
-@app.route("/cancel")
-@login_required # Garante que apenas um usuário logado acesse
-def cancel():
-    flash("Pagamento cancelado.", "info")
-    return redirect(url_for("condominio_dashboard"))
-
-# 🌟 ROTA CRÍTICA: WEBHOOK 🌟
-@app.route("/stripe-webhook", methods=["POST"])
-def stripe_webhook():
-    payload = request.data
-    sig_header = request.headers.get("stripe-signature")
-    event = None
-    
-    try:
-        # Verifica se o evento é genuíno do Stripe usando a chave secreta do webhook
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, app.config["STRIPE_WEBHOOK_SECRET"]
-        )
-    except ValueError as e:
-        # Payload inválido
-        print(f"Erro do Webhook: Payload inválido: {e}")
-        return "Payload inválido", 400
-    except stripe.error.SignatureVerificationError as e:
-        # Assinatura inválida
-        print(f"Erro do Webhook: Assinatura inválida: {e}")
-        return "Assinatura inválida", 400
-
-    # ------------------------------------
-    # Processamento dos Tipos de Eventos
-    # ------------------------------------
-    
-    if event["type"] == "checkout.session.completed":
-        # O cliente concluiu a compra.
-        session_data = event["data"]["object"]
-        customer_id = session_data.get("customer")
-        subscription_id = session_data.get("subscription")
-        
-        condominio = Condominio.query.filter_by(stripe_customer_id=customer_id).first()
-        
-        if condominio and subscription_id:
-            condominio.stripe_subscription_id = subscription_id
-            # Definimos como 'active' se o pagamento for imediato, ou 'trialing'
-            # Se for um trial, os próximos webhooks ajustarão o status.
-            condominio.subscription_status = "active" 
-            db.session.commit()
-            print(f"✅ Assinatura criada para Condomínio ID {condominio.id}")
-            
-    elif event["type"] in ["customer.subscription.updated", "customer.subscription.deleted"]:
-        # Mudança no status da assinatura (cancelada, expirada, etc.)
-        subscription = event["data"]["object"]
-        customer_id = subscription.get("customer")
-        
-        condominio = Condominio.query.filter_by(stripe_customer_id=customer_id).first()
-
-        if condominio:
-            condominio.subscription_status = subscription.get("status")
-            db.session.commit()
-            print(f"⚠️ Status da Assinatura atualizado para Condomínio ID {condominio.id}: {condominio.subscription_status}")
-
-    elif event["type"] == "invoice.payment_succeeded":
-        # O Stripe confirmou que um pagamento recorrente foi processado com sucesso
-        invoice = event["data"]["object"]
-        customer_id = invoice.get("customer")
-        
-        condominio = Condominio.query.filter_by(stripe_customer_id=customer_id).first()
-        
-        if condominio:
-            # Garante que o status esteja como ativo após um pagamento mensal
-            condominio.subscription_status = "active"
-            db.session.commit()
-            print(f"💰 Pagamento recorrente bem-sucedido para Condomínio ID {condominio.id}")
-
-    # Retorne um response para o Stripe para confirmar o recebimento
-    return "", 200
-
-@app.post("/admin/condominio/<int:_id>/edit-rank")
-@login_required
-def admin_edit_condominio_rank(_id):
-    if session.get("user_type") != "admin":
-        flash("Acesso restrito.", "danger")
-        return redirect(url_for("logout"))
-
-    c = Condominio.query.get_or_404(_id)
-    new_rank_str = request.form.get("rank")
-
-    if not new_rank_str:
-        flash("Nenhum rank foi selecionado.", "danger")
-        return redirect(url_for("admin_condominio_detalhe", _id=_id))
+    condominio = Condominio.query.get(condominio_id)
+    if not condominio:
+        app.logger.error(f"Tentativa de criar assinatura para condomínio inexistente com user_id: {condominio_id}")
+        return {"error": "Condomínio não encontrado"}, 404
 
     try:
-        # Convert string to CondominioRank enum member
-        new_rank = CondominioRank[new_rank_str.upper()]
+        data = request.json
+        plano_id_str = data.get("plano_id")
+
+        # Mapeamento dos planos internos para IDs de preapproval_plan do Mercado Pago
+        # VOCÊ PRECISA CRIAR ESTES PLANOS NO SEU PAINEL DO MERCADO PAGO E COLOCAR OS IDs REAIS AQUI
+        planos_mp = {
+            "plano_basico": {
+                "title": "Plano Básico Condomínio Blindado",
+                "description": "Certificação Bronze, Suporte Básico, 1 Licitação/mês",
+                "price": 99.00,
+                "frequency": 1, # Mensal
+                "frequency_type": "months",
+                "preapproval_plan_id": os.getenv("MP_PLAN_ID_BASIC", "SEU_PLAN_ID_BASICO_AQUI") # Preencher no .env
+            },
+            "plano_avancado": {
+                "title": "Plano Avançado Condomínio Blindado",
+                "description": "Certificação Prata, Suporte Prioritário, 3 Licitações/mês, Relatórios Mensais",
+                "price": 199.00,
+                "frequency": 1, # Mensal
+                "frequency_type": "months",
+                "preapproval_plan_id": os.getenv("MP_PLAN_ID_ADVANCED", "SEU_PLAN_ID_AVANCADO_AQUI") # Preencher no .env
+            },
+            "plano_premium": {
+                "title": "Plano Premium Condomínio Blindado",
+                "description": "Certificação Ouro, Suporte VIP 24/7, Licitações Ilimitadas, Relatórios Personalizados, Consultoria",
+                "price": 299.00,
+                "frequency": 1, # Mensal
+                "frequency_type": "months",
+                "preapproval_plan_id": os.getenv("MP_PLAN_ID_PREMIUM", "SEU_PLAN_ID_PREMIUM_AQUI") # Preencher no .env
+            }
+        }
+
+        plano_escolhido = planos_mp.get(plano_id_str)
+        if not plano_escolhido:
+            return {"error": "Plano inválido"}, 400
         
-        if c.rank == new_rank:
-            flash(f"O condomínio já possui o rank {new_rank.value.capitalize()}.", "info")
+        # Validar se o preapproval_plan_id foi configurado
+        if plano_escolhido["preapproval_plan_id"] == "SEU_PLAN_ID_BASICO_AQUI" or \
+           plano_escolhido["preapproval_plan_id"] == "SEU_PLAN_ID_AVANCADO_AQUI" or \
+           plano_escolhido["preapproval_plan_id"] == "SEU_PLAN_ID_PREMIUM_AQUI":
+            app.logger.error("MP_PLAN_ID não configurado no .env para o plano: %s", plano_id_str)
+            return {"error": "Configuração do plano inválida. Contate o administrador."}, 500
+
+        sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+
+        # Cria a pré-aprovação (assinatura)
+        preapproval_data = {
+            "preapproval_plan_id": plano_escolhido["preapproval_plan_id"],
+            "reason": plano_escolhido["title"],
+            "payer_email": condominio.email,
+            "external_reference": f"condominio-{condominio.id}-{plano_id_str}", # Referência externa
+            "back_url": f"{Config.BASE_URL}/mp/assinatura-status", # URL de retorno genérica
+            "status": "pending", # Pode iniciar como "pending" ou "authorized"
+            "auto_recurring": {
+                "frequency": plano_escolhido["frequency"],
+                "frequency_type": plano_escolhido["frequency_type"],
+                "transaction_amount": plano_escolhido["price"],
+                "currency_id": "BRL"
+            },
+            "metadata": {
+                "condominio_id": condominio.id,
+                "plano_assinatura": plano_id_str
+            }
+        }
+        
+        # Se a assinatura já existir para o condomínio, podemos atualizá-la ou criar uma nova.
+        # Para simplificar, vamos sempre tentar criar uma nova. Em um sistema real, você verificaria se já existe uma ativa.
+
+        preapproval_response = sdk.preapproval().create(preapproval_data)
+
+        if preapproval_response.get("status") in [200, 201]:
+            preapproval = preapproval_response["response"]
+            # Salva o preapproval_id e o plano no condomínio (status inicial)
+            condominio.mp_preapproval_id = preapproval.get("id")
+            condominio.mp_plan_id = plano_escolhido["preapproval_plan_id"]
+            condominio.plano_assinatura = plano_id_str
+            # subscription_expires_at será atualizado pelo webhook após o primeiro pagamento
+            db.session.commit()
+
+            return {"init_point": preapproval["init_point"], "preapproval_id": preapproval["id"]}, 200
         else:
-            c.rank = new_rank
-            db.session.commit()
-            flash(f"Rank do condomínio atualizado para {new_rank.value.capitalize()}.", "success")
+            app.logger.error(f"Erro MP ao criar pré-aprovação: {preapproval_response}")
+            return {"error": "Falha ao criar assinatura. Tente novamente mais tarde."}, 500
 
-    except KeyError:
-        flash("Rank inválido selecionado.", "danger")
+    except Exception as e:
+        app.logger.error(f"Erro inesperado em mp_criar_assinatura_recorrente: {e}", exc_info=True)
+        return {"error": str(e)}, 500
+
+@app.route("/mp/assinatura-status")
+@login_required
+def mp_assinatura_status():
+    # Rota de retorno após o usuário interagir com o Mercado Pago
+    status = request.args.get("status")
+    preapproval_id = request.args.get("preapproval_id")
+
+    if status == "approved":
+        flash("Sua assinatura foi criada com sucesso! Aguarde a confirmação do primeiro pagamento.", "success")
+    elif status == "pending":
+        flash("Sua assinatura está pendente de aprovação do Mercado Pago.", "info")
+    elif status == "in_process":
+        flash("O pagamento da sua assinatura está em análise.", "info")
+    else: # canceled, rejected, etc.
+        flash("Não foi possível processar sua assinatura. Tente novamente.", "danger")
     
-    return redirect(url_for("admin_condominio_detalhe", _id=_id))
+    # O webhook cuidará da atualização final do banco de dados
+    return redirect(url_for("condominio_dashboard"))
 
 # ------------------------------------------------------------------------
-# FIM DAS NOVAS ROTAS STRIPE 
+# FIM DAS NOVAS ROTAS MERCADO PAGO (ASSINATURAS) 
 # ------------------------------------------------------------------------
+
+
 
 @app.context_processor
 def inject_user():

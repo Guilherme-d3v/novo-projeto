@@ -40,11 +40,12 @@ class Condominio(db.Model):
     
     password_hash = db.Column(db.String(256), nullable=True) 
     
-    # 🌟 NOVOS CAMPOS PARA STRIPE 🌟
-    stripe_customer_id = db.Column(db.String(120), nullable=True, unique=True)
-    stripe_subscription_id = db.Column(db.String(120), nullable=True, unique=True)
-    subscription_status = db.Column(db.String(50), default='inativo') # active, past_due, canceled, inativo
-    # 🌟 FIM DOS NOVOS CAMPOS PARA STRIPE 🌟
+    # 🌟 NOVOS CAMPOS PARA MERCADO PAGO ASSINATURAS 🌟
+    mp_preapproval_id = db.Column(db.String(120), nullable=True, unique=True)
+    mp_plan_id = db.Column(db.String(120), nullable=True) # ID do plano de preapproval do MP
+    plano_assinatura = db.Column(db.String(50), nullable=True) # basico, avancado, premium
+    subscription_expires_at = db.Column(db.DateTime, nullable=True)
+    # 🌟 FIM DOS NOVOS CAMPOS PARA MERCADO PAGO ASSINATURAS 🌟
     
     # NOVO CAMPO: Indica se o usuário precisa trocar a senha na próxima vez que logar
     needs_password_change = db.Column(db.Boolean, default=False) 
