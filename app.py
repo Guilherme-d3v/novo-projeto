@@ -1132,65 +1132,49 @@ def mp_pending():
 
 @app.route("/mp/webhook", methods=["POST"])
 def mp_webhook():
-    print("--- MERCADO PAGO WEBHOOK RECEIVED ---")
-    print(f"Headers: {request.headers}")
-    print(f"Body: {request.get_data(as_text=True)}")
-    
+    data = request.json if request.is_json else request.form.to_dict()
+    app.logger.warning(f"Webhook MP recebido: {data}")
+
     try:
+        # Extrai o ID do pagamento da notificação
         payment_id = None
-        # Prioriza JSON, mas faz fallback para Form-data
-        data = request.json if request.is_json else request.form.to_dict()
-
-        print(f"Parsed Data: {data}")
-
-        # Novo formato de notificação (Webhook)
-        if data and 'action' in data and 'payment' in data.get('action', ''):
+        if data and data.get('type') == 'payment':
             payment_id = data.get('data', {}).get('id')
-        # Formato de notificação antiga (IPN)
-        elif data and 'topic' in data and data.get('topic') == 'payment':
-            payment_id = data.get('id')
-        # Fallback final para parâmetros na URL
-        elif request.args.get('topic') == 'payment':
-            payment_id = request.args.get('id')
         
         if not payment_id:
-            print("Webhook recebido, mas não é uma notificação de pagamento ou não contém ID.")
+            app.logger.info("Webhook ignorado (não é de pagamento ou não contém ID).")
             return "Notification ignored", 200
 
-        print(f"Processando pagamento ID: {payment_id}")
+        # Busca os detalhes do pagamento na API do Mercado Pago
+        app.logger.info(f"Processando pagamento ID: {payment_id}")
         sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
-        payment_info = sdk.payment().get(payment_id)
-                        
-                                # Logando a resposta da API para depuração (de forma segura)
-        if isinstance(payment_info, dict):
-            app.logger.warning(f"Resposta da API (dict): {payment_info}")
-        else:
-            app.logger.warning(f"Resposta da API (tipo do objeto): {type(payment_info)}")
-            try:
-                # Tenta converter para dict se for um objeto
-                app.logger.warning(f"Resposta da API (vars): {vars(payment_info)}")
-            except TypeError:
-                app.logger.warning("Não foi possível converter a resposta da API em dict.")
-                        
-                if not payment_info or payment_info.get("status") not in [200, 201]:
-                        
-                     app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP. A resposta foi: {payment_info}")
-                        
-                     return "Failed to get payment info", 500
-
-        payment = payment_info["response"]
+        payment_info_response = sdk.payment().get(payment_id)
         
+        app.logger.warning(f"Resposta da API do MP: {payment_info_response}")
+
+        if not payment_info_response or payment_info_response.get("status") != 200:
+             app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
+             return "Failed to get payment info", 500
+
+        payment = payment_info_response["response"]
+        
+        # Extrai os dados relevantes do pagamento
         status = payment.get("status")
         metadata = payment.get("metadata", {})
-        
         empresa_id = metadata.get("empresa_id") 
         coins_qtd = metadata.get("coins_qtd")
         
-        existe = TransacaoCoin.query.filter_by(payment_id=str(payment_id)).first()
-        
-        if status == "approved" and not existe and empresa_id and coins_qtd:
+        # Verifica se o pagamento foi aprovado e se os metadados existem
+        if status == "approved" and empresa_id and coins_qtd:
+            # Verifica se esta transação já foi processada para evitar duplicidade
+            existe = TransacaoCoin.query.filter_by(payment_id=str(payment_id)).first()
+            if existe:
+                app.logger.warning(f"Pagamento ID {payment_id} já processado anteriormente.")
+                return "OK", 200
+
             empresa = Empresa.query.get(empresa_id)
             if empresa:
+                # Adiciona os coins e registra a transação
                 saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
                 empresa.saldo_coins = saldo_atual + int(coins_qtd)
                 
@@ -1204,14 +1188,17 @@ def mp_webhook():
                 
                 db.session.add(transacao)
                 db.session.commit()
-                print(f"💰 SUCESSO: {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
+                app.logger.info(f"💰 SUCESSO: {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
+            else:
+                app.logger.error(f"Empresa ID {empresa_id} não encontrada no banco de dados para o pagamento {payment_id}.")
         else:
-            print(f"Pagamento não processado. Status: {status}, Já existe: {bool(existe)}, ID Empresa: {empresa_id}, Qtd Coins: {coins_qtd}")
+            # Loga por que o pagamento não foi processado
+            app.logger.warning(f"Pagamento ID {payment_id} não processado. Status: {status}, ID Empresa: {empresa_id}, Qtd Coins: {coins_qtd}")
 
         return "OK", 200
         
     except Exception as e:
-        app.logger.error("❌ Erro fatal no Webhook MP", exc_info=True)
+        app.logger.error(f"❌ Erro fatal no Webhook MP: {e}", exc_info=True)
         # Retornar 500 para que o MP possa tentar novamente.
         return "Internal Server Error", 500
 
