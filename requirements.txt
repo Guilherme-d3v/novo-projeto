@@ -9,3 +9,5 @@ gunicorn
 werkzeug
 python-bcrypt
 stripe
+mercadopago
+logging

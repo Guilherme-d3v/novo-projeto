@@ -1137,13 +1137,13 @@ def mp_webhook():
 
         print(f"Processando pagamento ID: {payment_id}")
         sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
-                                payment_info = sdk.payment().get(payment_id)
+        payment_info = sdk.payment().get(payment_id)
                         
                                 # Logando a resposta completa da API para depuração
-                                app.logger.info(f"Resposta da API do Mercado Pago para o payment_id {payment_id}: {payment_info}")
+        app.logger.info(f"Resposta da API do Mercado Pago para o payment_id {payment_id}: {payment_info}")
                         
-                                if not payment_info or payment_info.get("status") not in [200, 201]:             print(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
-             return "Failed to get payment info", 500
+        if not payment_info or payment_info.get("status") not in [200, 201]:             print(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
+        return "Failed to get payment info", 500
 
         payment = payment_info["response"]
         
