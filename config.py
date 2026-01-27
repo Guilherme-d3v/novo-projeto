@@ -3,7 +3,7 @@ from urllib.parse import quote, urlparse
 from dotenv import load_dotenv
 
 # Garantir que as variáveis de ambiente sejam carregadas, embora já esteja em app.py
-load_dotenv() 
+load_dotenv()
 
 class Config:
     # --- 1. CONFIGURAÇÕES DE APLICAÇÃO ---
