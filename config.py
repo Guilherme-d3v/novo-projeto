@@ -65,10 +65,9 @@ class Config:
     MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN", "TEST-...") 
     # Token de verificação do Webhook (opcional, mas recomendado para segurança)
     MP_WEBHOOK_SECRET = os.getenv("MP_WEBHOOK_SECRET", "")
-    
-    # URL Base da aplicação para gerar links externos
-    BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:5000")
-    
+        
+        # URL Base da aplicação para gerar links externos
+    BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:5000")    
     # --- Adicionado para forçar o domínio correto na geração de URLs externas ---
     # Extrai o esquema e o nome do servidor da BASE_URL para SERVER_NAME e PREFERRED_URL_SCHEME
     _parsed_url = urlparse(BASE_URL)
