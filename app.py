@@ -1097,12 +1097,12 @@ def mp_criar_pagamento():
                 "email": empresa.email_comercial,  # USA A EMPRESA JÁ VERIFICADA
             },
             "back_urls": {
-                "success": url_for("mp_success", _external=True),
-                "failure": url_for("mp_failure", _external=True),
-                "pending": url_for("mp_pending", _external=True),
+                "success": f"{Config.BASE_URL}/mp/success",
+                "failure": f"{Config.BASE_URL}/mp/failure",
+                "pending": f"{Config.BASE_URL}/mp/pending",
             },
             "auto_return": "approved",
-            "notification_url": url_for("mp_webhook", _external=True),
+            "notification_url": f"{Config.BASE_URL}/mp/webhook",
             "metadata": {
                 "empresa_id": user_id,
                 "coins_qtd": pacote['qtd']
