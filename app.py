@@ -1051,25 +1051,33 @@ def comprar_coins():
 def mp_criar_pagamento():
     user_id = session.get("user_id")
     if session.get("user_type") != "empresa":
-        return {"error": "Unauthorized"}, 401
+        return {"error": "Acesso não autorizado"}, 401
+
+    # --- CORREÇÃO DE ROBUSTEZ ---
+    # Busca a empresa no início e verifica se ela existe
+    empresa = Empresa.query.get(user_id)
+    if not empresa:
+        app.logger.error(f"Tentativa de criar pagamento para empresa inexistente com user_id: {user_id}")
+        return {"error": "Empresa não encontrada"}, 404
+    # --- FIM DA CORREÇÃO ---
 
     try:
         data = request.json
         pacote_id = data.get("pacote_id")
-        
+
         pacotes = {
             "pacote_1": {"qtd": 50, "preco": 50.00, "titulo": "50 Coins"},
             "pacote_2": {"qtd": 120, "preco": 100.00, "titulo": "120 Coins (Bônus)"},
             "pacote_3": {"qtd": 300, "preco": 200.00, "titulo": "300 Coins (Mega Bônus)"}
         }
-        
+
         pacote = pacotes.get(pacote_id)
         if not pacote:
             return {"error": "Pacote inválido"}, 400
 
         sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
-        
-        # Cria a preferência de pagamento (VERSÃO MÍNIMA PARA TESTE)
+
+        # Cria a preferência de pagamento com todos os dados necessários
         preference_data = {
             "items": [
                 {
@@ -1077,20 +1085,34 @@ def mp_criar_pagamento():
                     "quantity": 1,
                     "unit_price": pacote["preco"]
                 }
-            ]
+            ],
+            "payer": {
+                "email": empresa.email_comercial,  # USA A EMPRESA JÁ VERIFICADA
+            },
+            "back_urls": {
+                "success": url_for("mp_success", _external=True),
+                "failure": url_for("mp_failure", _external=True),
+                "pending": url_for("mp_pending", _external=True),
+            },
+            "auto_return": "approved",
+            "notification_url": url_for("mp_webhook", _external=True),
+            "metadata": {
+                "empresa_id": user_id,
+                "coins_qtd": pacote['qtd']
+            }
         }
 
         preference_response = sdk.preference().create(preference_data)
-        
+
         if preference_response.get("status") in [200, 201]:
             preference = preference_response["response"]
             return {"init_point": preference["init_point"], "preference_id": preference["id"]}, 200
         else:
-            print(f"Erro MP - Resposta da API: {preference_response}")
+            app.logger.error(f"Erro MP ao criar preferência: {preference_response}")
             return {"error": "Falha ao criar preferência de pagamento."}, 500
 
     except Exception as e:
-        print(f"Erro MP - Exceção inesperada: {e}")
+        app.logger.error(f"Erro inesperado em mp_criar_pagamento: {e}", exc_info=True)
         return {"error": str(e)}, 500
 
 @app.route("/mp/success")
