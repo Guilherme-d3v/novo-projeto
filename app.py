@@ -1228,8 +1228,23 @@ def mp_webhook():
                     app.logger.warning(f"Pagamento ID {payment_id} aprovado, mas sem empresa_id/coins_qtd ou condominio_id/plano_assinatura nos metadados.")
             else:
                 app.logger.warning(f"Pagamento ID {payment_id} não processado. Status: {status}")
-
-        
+            
+                        
+            
+                        # Garante que sempre haja um retorno para o tópico 'payment'
+            
+        return "OK", 200 
+            
+                    
+            
+                    # Se o tópico não for 'payment', ainda precisamos retornar algo.
+            
+                    # Por exemplo, para merchant_order, ou outros tópicos que o MP possa enviar.
+            
+        return "OK", 200 # <--- Adicionado retorno padrão aqui
+            
+                    
+            
     except Exception as e:
         app.logger.error(f"❌ Erro fatal no Webhook MP: {e}", exc_info=True)
         return "Internal Server Error", 500
