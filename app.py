@@ -6,6 +6,7 @@ import secrets
 import string
 import logging
 import sys # Import sys for logging to stderr
+from datetime import datetime, timedelta
 
 # Configura o logger para Flask
 # Isso garante que as mensagens de log (INFO, WARNING, ERROR) sejam exibidas
@@ -592,11 +593,15 @@ def detalhe_licitacao(_id):
     lic = Licitacao.query.get_or_404(_id)
     empresa = Empresa.query.get(user_id)
     
+    # Garante que saldo_coins nunca seja None para evitar erros no template
+    if empresa.saldo_coins is None:
+        empresa.saldo_coins = 0
+    
     # Verifica se já se candidatou
     ja_candidatou = Candidatura.query.filter_by(licitacao_id=lic.id, empresa_id=empresa.id).first() is not None
     
     # CORREÇÃO: Trata None como 0 para evitar erro de comparação
-    saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
+    saldo_atual = empresa.saldo_coins  # Agora seguro, não é mais None
     custo_licitacao = lic.custo_coins if lic.custo_coins is not None else 0
     saldo_insuficiente = saldo_atual < custo_licitacao
     
@@ -1006,6 +1011,18 @@ def admin_lista_empresas():
                            titulo="Empresas Parceiras",
                            status_filter=status_filter)
 
+@app.route("/admin/gestores")
+@login_required
+def admin_lista_gestores():
+    if session.get("user_type") != "admin": return redirect(url_for("logout"))
+    
+    # Obtém todos os condomínios para listar como "gestores"
+    gestores = Condominio.query.order_by(Condominio.created_at.desc()).all()
+        
+    return render_template("admin_lista_gestores.html",
+                           gestores=gestores,
+                           titulo="Gerentes de Condomínio")
+
 @app.route("/condominios-certificados")
 def lista_certificados():
     try:
@@ -1149,109 +1166,135 @@ def mp_webhook():
     app.logger.warning(f"Webhook MP recebido: {data}")
 
     try:
-        # Verifica o tipo de notificação
-        topic = data.get('topic')
+        # Unifica a busca pelo tópico, compatível com diferentes versões da API do MP
+        topic = data.get('topic') or data.get('type')
         
         if topic == 'payment':
-            # Tenta extrair o payment_id de diferentes estruturas de webhook
             payment_id = data.get('data', {}).get('id')
-            if not payment_id: # Se não encontrou no 'data.id', tenta no 'resource'
-                payment_id = data.get('resource')
-                if payment_id and "http" in payment_id: # Se for uma URL, extrai o ID do final
-                    try:
-                        payment_id = payment_id.split('/')[-1]
-                    except Exception:
-                        payment_id = None
-            
             if not payment_id:
-                app.logger.info("Webhook de pagamento ignorado (não contém ID de pagamento válido).")
-                return "Notification ignored", 200
+                app.logger.error("Webhook de pagamento sem ID.")
+                return "Webhook de pagamento sem ID.", 400
 
-            app.logger.info(f"Processando pagamento ID: {payment_id}")
-            app.logger.info(f"Inicializando SDK do Mercado Pago com token: {app.config['MP_ACCESS_TOKEN']}")
+            app.logger.info(f"Processando notificação de pagamento para payment_id: {payment_id}")
+            # Apenas processa se o pagamento estiver aprovado para evitar lógica duplicada
             sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
-            app.logger.info(f"Consultando detalhes do pagamento {payment_id} no MP.")
-            payment_info_response = sdk.payment().get(payment_id)
-            app.logger.info(f"Resposta da consulta de pagamento: {payment_info_response}")
-            
-            if not payment_info_response or payment_info_response.get("status") != 200:
-                app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP. Resposta: {payment_info_response}")
-                return "Failed to get payment info", 500
-
-            payment = payment_info_response["response"]
-            status = payment.get("status")
-            metadata = payment.get("metadata", {})
-            empresa_id = metadata.get("empresa_id") 
-            coins_qtd = metadata.get("coins_qtd")
-            
-            # NOVO: Lógica para processar compra de planos (Condomínio)
-            condominio_id = metadata.get("condominio_id")
-            plano_assinatura = metadata.get("plano_assinatura")
-
-            if status == "approved":
-                if empresa_id and coins_qtd: # Processamento de coins para Empresas
-                    existe = TransacaoCoin.query.filter_by(payment_id=str(payment_id)).first()
-                    if existe:
-                        app.logger.warning(f"Pagamento ID {payment_id} (coins) já processado anteriormente.")
-                        return "OK", 200
-
-                    empresa = Empresa.query.get(empresa_id)
-                    if empresa:
-                        saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
-                        empresa.saldo_coins = saldo_atual + int(coins_qtd)
-                        
-                        transacao = TransacaoCoin(
-                            empresa_id=empresa.id,
-                            quantidade=int(coins_qtd),
-                            descricao=f"Compra de {coins_qtd} coins via Mercado Pago",
-                            payment_id=str(payment_id),
-                            status="concluido"
-                        )
-                        db.session.add(transacao)
-                        db.session.add(empresa)
-                        db.session.commit()
-                        app.logger.info(f"💰 SUCESSO: {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
-                    else:
-                        app.logger.error(f"Empresa ID {empresa_id} não encontrada para pagamento {payment_id}.")
-                
-                elif condominio_id and plano_assinatura: # Processamento de planos para Condomínios
-                    # Verifica se o pagamento já foi processado para evitar duplicidade
-                    existe_transacao = TransacaoPlano.query.filter_by(payment_id=str(payment_id)).first()
-                    if existe_transacao:
-                        app.logger.warning(f"Pagamento ID {payment_id} (plano) já processado anteriormente.")
-                        return "OK", 200
-
-                    condominio = Condominio.query.get(condominio_id)
-                    if condominio:
-                        from datetime import datetime, timedelta
-                        condominio.plano_assinatura = plano_assinatura
-                        # Define a expiração para um mês a partir de agora
-                        condominio.subscription_expires_at = datetime.utcnow() + timedelta(days=30)
-                        
-                        # Registra a transação do plano usando o novo modelo TransacaoPlano
-                        transacao_plano = TransacaoPlano(
-                            condominio_id=condominio.id,
-                            plano_id=plano_assinatura,
-                            valor=float(payment.get("transaction_amount", 0.0)),
-                            payment_id=str(payment_id),
-                            status="concluido"
-                        )
-                        db.session.add(transacao_plano)
-                        db.session.add(condominio)
-                        db.session.commit()
-                        app.logger.info(f"✅ SUCESSO: Plano {plano_assinatura} ativado para Condomínio ID {condominio_id}")
-                    else:
-                        app.logger.error(f"Condomínio ID {condominio_id} não encontrado para pagamento do plano {payment_id}.")
-                else:
-                    app.logger.warning(f"Pagamento ID {payment_id} aprovado, mas sem empresa_id/coins_qtd ou condominio_id/plano_assinatura nos metadados.")
+            payment = sdk.payment().get(payment_id)
+            if payment and payment.get("status") == 200 and payment["response"].get("status") == "approved":
+                 process_approved_payment(payment_id)
             else:
-                app.logger.warning(f"Pagamento ID {payment_id} não processado. Status: {status}")
+                 app.logger.info(f"Pagamento {payment_id} não está aprovado, status: {payment['response'].get('status') if payment and payment.get('status') == 200 else 'desconhecido'}")
+
+        elif topic == 'merchant_order':
+            resource_url = data.get('resource')
+            if not resource_url:
+                app.logger.error("Webhook de merchant_order sem URL de recurso.")
+                return "Webhook de merchant_order sem URL de recurso.", 400
+
+            order_id = resource_url.split('/')[-1]
+            app.logger.info(f"Processando notificação de merchant_order para order_id: {order_id}")
             
+            sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+            order_response = sdk.merchant_order().get(order_id)
+
+            if order_response and order_response.get("status") == 200:
+                order = order_response["response"]
+                # Processa apenas pagamentos APROVADOS dentro do pedido
+                for payment in order.get("payments", []):
+                    if payment.get("status") == 'approved':
+                        app.logger.info(f"Encontrado pagamento aprovado {payment['id']} dentro do pedido {order_id}.")
+                        process_approved_payment(payment['id'])
+            else:
+                app.logger.error(f"Falha ao buscar merchant_order {order_id}. Resposta: {order_response}")
+
+        else:
+            app.logger.warning(f"Webhook com tópico desconhecido ou ausente: '{topic}'")
+
         return "OK", 200 
             
     except Exception as e:
         app.logger.error(f"❌ Erro fatal no Webhook MP: {e}", exc_info=True)
         return "Internal Server Error", 500
+
+def process_approved_payment(payment_id):
+    """
+    Processa um pagamento aprovado, buscando seus detalhes,
+    validando metadados e atualizando o banco de dados.
+    Esta função é centralizada para ser chamada por qualquer tipo de notificação.
+    """
+    try:
+        sdk = mercadopago.SDK(app.config["MP_ACCESS_TOKEN"])
+        app.logger.info(f"Consultando detalhes do pagamento {payment_id} no MP.")
+        payment_info_response = sdk.payment().get(payment_id)
+        
+        if not payment_info_response or payment_info_response.get("status") != 200:
+            app.logger.error(f"Erro ao consultar o pagamento {payment_id} na API do MP.")
+            return
+
+        payment = payment_info_response["response"]
+        metadata = payment.get("metadata", {})
+        
+        # Lógica para processar compra de planos (Condomínio)
+        condominio_id = metadata.get("condominio_id")
+        plano_assinatura = metadata.get("plano_assinatura")
+        if condominio_id and plano_assinatura:
+            # Garante que a transação não seja processada duas vezes
+            if TransacaoPlano.query.filter_by(payment_id=str(payment_id)).first():
+                app.logger.warning(f"Pagamento de plano ID {payment_id} já processado anteriormente.")
+                return
+
+            condominio = Condominio.query.get(condominio_id)
+            if condominio:
+                condominio.plano_assinatura = plano_assinatura
+                condominio.subscription_expires_at = datetime.utcnow() + timedelta(days=30)
+                
+                transacao_plano = TransacaoPlano(
+                    condominio_id=condominio.id,
+                    plano_id=plano_assinatura,
+                    valor=float(payment.get("transaction_amount", 0.0)),
+                    payment_id=str(payment_id),
+                    status="concluido"
+                )
+                db.session.add(transacao_plano)
+                db.session.add(condominio)
+                db.session.commit()
+                app.logger.info(f"✅ SUCESSO: Plano {plano_assinatura} ativado para Condomínio ID {condominio_id}")
+            else:
+                app.logger.error(f"Condomínio ID {condominio_id} não encontrado para pagamento do plano {payment_id}.")
+            return
+
+        # Lógica para processar compra de coins (Empresa)
+        empresa_id = metadata.get("empresa_id") 
+        coins_qtd = metadata.get("coins_qtd")
+        if empresa_id and coins_qtd:
+            if TransacaoCoin.query.filter_by(payment_id=str(payment_id)).first():
+                app.logger.warning(f"Pagamento de coins ID {payment_id} já processado anteriormente.")
+                return
+
+            empresa = Empresa.query.get(empresa_id)
+            if empresa:
+                saldo_atual = empresa.saldo_coins if empresa.saldo_coins is not None else 0
+                empresa.saldo_coins = saldo_atual + int(coins_qtd)
+                
+                transacao = TransacaoCoin(
+                    empresa_id=empresa.id,
+                    quantidade=int(coins_qtd),
+                    descricao=f"Compra de {coins_qtd} coins via Mercado Pago",
+                    payment_id=str(payment_id),
+                    status="concluido"
+                )
+                db.session.add(transacao)
+                db.session.add(empresa)
+                db.session.commit()
+                app.logger.info(f"💰 SUCESSO: {coins_qtd} Coins creditados para Empresa ID {empresa_id}")
+            else:
+                app.logger.error(f"Empresa ID {empresa_id} não encontrada para pagamento {payment_id}.")
+            return
+
+        app.logger.warning(f"Pagamento ID {payment_id} aprovado, mas sem metadados reconhecíveis (plano ou coins).")
+
+    except Exception as e:
+        app.logger.error(f"❌ Erro ao processar pagamento aprovado {payment_id}: {e}", exc_info=True)
+        db.session.rollback()
 
 @app.route("/mp/criar-assinatura-recorrente", methods=["POST"])
 @login_required

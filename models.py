@@ -65,9 +65,24 @@ class Condominio(db.Model):
 
     @property
     def subscription_status(self):
-        """Calcula o status da assinatura dinamicamente."""
-        if self.plano_assinatura and self.subscription_expires_at and self.subscription_expires_at > datetime.utcnow():
+        """Calcula o status da assinatura dinamicamente, com atenção aos fusos horários."""
+        from datetime import datetime, timezone # Importa o necessário aqui
+
+        if not self.plano_assinatura or not self.subscription_expires_at:
+            return 'inactive'
+        
+        # Garante que estamos comparando datetimes cientes de fuso horário (timezone-aware).
+        # Isso evita bugs comuns de fuso horário entre o servidor da aplicação e o do banco de dados.
+        
+        # Converte a data de expiração (que é 'naive') para uma data 'aware' em UTC
+        expires_at_utc = self.subscription_expires_at.replace(tzinfo=timezone.utc)
+        
+        # Pega a data/hora atual, também ciente de que está em UTC
+        now_utc = datetime.now(timezone.utc)
+
+        if expires_at_utc > now_utc:
             return 'active'
+            
         return 'inactive'
 
 
