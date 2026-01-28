@@ -1,77 +1,77 @@
 {% extends "base.html" %}
-
+{% block title %}Comprar Coins - Condomínio Blindado{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold">Adquirir Coins</h2>
-        <p class="text-muted">Aumente suas chances participando de novas licitações de condomínios.</p>
-    </div>
+<div class="w-full bg-white p-4 md:p-8 rounded-lg shadow-lg my-4 md:my-8">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 md:mb-6 text-center">Comprar Coins</h1>
+    <p class="text-base md:text-lg text-gray-600 text-center mb-6 md:mb-8">
+        Aumente suas chances participando de novas licitações de condomínios.
+    </p>
 
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        <!-- Pacote 1 -->
-        <div class="col">
-            <div class="card h-100 border-0 shadow-sm text-center">
-                <div class="card-body p-4">
-                    <div class="mb-3">
-                        <i class="bi bi-coin text-warning fs-1"></i>
-                    </div>
-                    <h3 class="card-title">Pacote Básico</h3>
-                    <div class="display-5 my-3">50 <small class="fs-6 text-muted">coins</small></div>
-                    <p class="text-muted">Ideal para pequenas empresas que estão começando agora.</p>
-                    <hr>
-                    <div class="fs-4 fw-bold mb-4">R$ 50,00</div>
-                    <button onclick="checkout('pacote_1')" class="btn btn-outline-primary w-100 rounded-pill">Comprar Agora</button>
-                </div>
-            </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <!-- Pacote Básico -->
+        <div class="bg-gray-50 p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Pacote Básico</h2>
+            <p class="text-sm text-gray-500 mb-4">Ideal para quem está começando</p>
+            <div class="text-3xl font-bold text-gray-800 mb-4">50 <span class="text-lg font-normal text-yellow-600">Coins</span></div>
+            <ul class="text-sm text-gray-600 mb-6 space-y-2">
+                <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Acesso a licitações</li>
+                <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Visibilidade inicial</li>
+            </ul>
+            <p class="text-4xl font-bold text-gray-800 mb-4">R$ 50</p>
+            <button onclick="checkout('pacote_1')" class="w-full bg-blindado-blue text-white py-2 px-4 rounded-lg hover:bg-blindado-dark transition duration-300">
+                Comprar Agora
+            </button>
         </div>
 
-        <!-- Pacote 2 (Destaque) -->
-        <div class="col">
-            <div class="card h-100 border-primary shadow text-center position-relative">
-                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary">MAIS POPULAR</span>
-                <div class="card-body p-4">
-                    <div class="mb-3 text-primary">
-                        <i class="bi bi-star-fill fs-1"></i>
-                    </div>
-                    <h3 class="card-title">Pacote Pro</h3>
-                    <div class="display-5 my-3">120 <small class="fs-6 text-muted">coins</small></div>
-                    <p class="text-muted">Ótimo custo-benefício com <span class="badge bg-success">20% de bônus</span>.</p>
-                    <hr>
-                    <div class="fs-4 fw-bold mb-4">R$ 100,00</div>
-                    <button onclick="checkout('pacote_2')" class="btn btn-primary w-100 rounded-pill">Comprar Agora</button>
-                </div>
-            </div>
+        <!-- Pacote Pro (Destaque) -->
+        <div class="bg-blue-50 p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 relative">
+            <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1 rounded-full">MAIS POPULAR</span>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Pacote Pro</h2>
+            <p class="text-sm text-gray-500 mb-4">Ótimo custo-benefício com bônus</p>
+            <div class="text-3xl font-bold text-gray-800 mb-4">120 <span class="text-lg font-normal text-yellow-600">Coins</span></div>
+            <ul class="text-sm text-gray-600 mb-6 space-y-2">
+                <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Acesso a mais licitações</li>
+                <li><i class="fas fa-star text-yellow-500 mr-2"></i><span class="font-bold">20% de bônus</span></li>
+            </ul>
+            <p class="text-4xl font-bold text-gray-800 mb-4">R$ 100</p>
+            <button onclick="checkout('pacote_2')" class="w-full bg-blindado-blue text-white py-2 px-4 rounded-lg hover:bg-blindado-dark transition duration-300">
+                Comprar Agora
+            </button>
         </div>
 
-        <!-- Pacote 3 -->
-        <div class="col">
-            <div class="card h-100 border-0 shadow-sm text-center">
-                <div class="card-body p-4">
-                    <div class="mb-3 text-warning">
-                        <i class="bi bi-gem fs-1"></i>
-                    </div>
-                    <h3 class="card-title">Pacote Enterprise</h3>
-                    <div class="display-5 my-3">300 <small class="fs-6 text-muted">coins</small></div>
-                    <p class="text-muted">Máxima exposição com <span class="badge bg-success">50% de bônus</span>.</p>
-                    <hr>
-                    <div class="fs-4 fw-bold mb-4">R$ 200,00</div>
-                    <button onclick="checkout('pacote_3')" class="btn btn-outline-primary w-100 rounded-pill">Comprar Agora</button>
-                </div>
-            </div>
+        <!-- Pacote Enterprise -->
+        <div class="bg-gray-50 p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Pacote Enterprise</h2>
+            <p class="text-sm text-gray-500 mb-4">Máxima exposição e oportunidades</p>
+            <div class="text-3xl font-bold text-gray-800 mb-4">300 <span class="text-lg font-normal text-yellow-600">Coins</span></div>
+            <ul class="text-sm text-gray-600 mb-6 space-y-2">
+                <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Acesso total a licitações</li>
+                <li><i class="fas fa-gem text-blue-500 mr-2"></i><span class="font-bold">50% de bônus</span></li>
+            </ul>
+            <p class="text-4xl font-bold text-gray-800 mb-4">R$ 200</p>
+            <button onclick="checkout('pacote_3')" class="w-full bg-blindado-blue text-white py-2 px-4 rounded-lg hover:bg-blindado-dark transition duration-300">
+                Comprar Agora
+            </button>
         </div>
     </div>
 
-    <div class="mt-5 text-center p-4 bg-light rounded shadow-sm">
-        <h5 class="mb-3">Pagamento Seguro via Mercado Pago</h5>
-        <div class="d-flex justify-content-center gap-3 grayscale opacity-50">
-            <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-256.png" height="30" alt="Mercado Pago">
-            <img src="https://logospng.org/download/pix/logo-pix-256.png" height="30" alt="PIX">
+    <div class="mt-8 text-center p-4 bg-gray-50 rounded-lg">
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Pagamento Seguro via Mercado Pago</h3>
+        <div class="flex justify-center items-center space-x-4 mt-4">
+            <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-256.png" alt="Mercado Pago" class="h-8">
+            <img src="https://logospng.org/download/pix/logo-pix-256.png" alt="PIX" class="h-8">
         </div>
     </div>
 </div>
 
 <script>
 function checkout(pacoteId) {
+    // Adiciona um feedback visual para o usuário
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+    button.disabled = true;
+
     fetch('/mp/criar-pagamento', {
         method: 'POST',
         headers: {
@@ -79,17 +79,25 @@ function checkout(pacoteId) {
         },
         body: JSON.stringify({ pacote_id: pacoteId })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Falha na resposta do servidor.');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.init_point) {
             window.location.href = data.init_point;
         } else {
-            alert("Erro ao iniciar pagamento: " + (data.error || "Erro desconhecido"));
+            throw new Error(data.error || "Erro desconhecido ao criar pagamento.");
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert("Erro na conexão com o servidor.");
+        console.error('Erro no checkout:', error);
+        alert("Não foi possível iniciar o pagamento. Por favor, tente novamente.");
+        // Restaura o botão em caso de erro
+        button.innerHTML = originalText;
+        button.disabled = false;
     });
 }
 </script>
