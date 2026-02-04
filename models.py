@@ -100,6 +100,7 @@ class Empresa(db.Model):
     email_comercial = db.Column(db.String(100))
     website = db.Column(db.String(200))
     doc_filename = db.Column(db.String(300))
+    logo_filename = db.Column(db.String(255), nullable=True)
     status = db.Column(db.String(20), default="pendente")
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     email_verified = db.Column(db.Boolean, default=False)

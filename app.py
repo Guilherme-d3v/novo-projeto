@@ -670,7 +670,7 @@ def candidatar_licitacao(_id):
         flash(f"Erro ao processar candidatura: {str(e)}", "danger")
         return redirect(url_for("detalhe_licitacao", _id=lic.id))
 
-@app.route("/dashboard/empresa")
+@app.route("/dashboard/empresa", methods=["GET", "POST"])
 @login_required
 def empresa_dashboard():
     user_id = session.get("user_id")
@@ -678,10 +678,40 @@ def empresa_dashboard():
     if session.get("user_type") != "empresa" or user_id == "admin":
         flash("Acesso negado.", "danger")
         return redirect(url_for("logout"))
-        
-    empresa = Empresa.query.get_or_404(user_id)
 
-    return render_template("empresa_dashboard.html", e=empresa)
+    e = Empresa.query.get_or_404(user_id)
+
+    if e.needs_password_change:
+        return redirect(url_for("mudar_senha"))
+
+    if request.method == "POST":
+        # Verifica se o upload é de um documento ou de uma logo
+        if 'documento' in request.files:
+            documento = request.files.get("documento")
+            if documento and documento.filename:
+                if allowed_file(documento.filename):
+                    safe = secure_filename(documento.filename)
+                    e.doc_filename = f"{uuid4().hex}_{safe}"
+                    documento.save(UPLOAD_DIR / e.doc_filename)
+                    db.session.commit()
+                    flash("Documento enviado com sucesso!", "success")
+                else:
+                    flash("Envie um arquivo válido (PDF/JPG/PNG).", "warning")
+
+        if 'logo' in request.files:
+            logo = request.files.get("logo")
+            if logo and logo.filename:
+                if logo.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    safe = secure_filename(logo.filename)
+                    e.logo_filename = f"logo_{uuid4().hex}_{safe}"
+                    logo.save(UPLOAD_DIR / e.logo_filename)
+                    db.session.commit()
+                    flash("Logo enviada com sucesso!", "success")
+                else:
+                    flash("Envie uma imagem válida (PNG ou JPEG).", "warning")
+
+    return render_template("empresa_dashboard.html", e=e)
+
 
 
 @app.route("/dashboard/empresa/candidaturas")

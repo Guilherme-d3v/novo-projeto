@@ -2,7 +2,32 @@
 {% block title %}Dashboard da Empresa{% endblock %}
 {% block content %}
 <div class="w-full bg-white p-4 md:p-8 rounded-lg shadow-lg my-4 md:my-8">
-    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard da Empresa: {{ e.nome }}</h1>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div class="flex items-center space-x-4">
+            <!-- Seção da Logo da Empresa -->
+            <div class="relative">
+                {% if e.logo_filename %}
+                    <img src="{{ url_for('uploaded_file', filename=e.logo_filename) }}" alt="Logo da Empresa" class="w-20 h-20 object-cover rounded-lg border-2 border-gray-200">
+                {% else %}
+                    <div class="w-20 h-20 bg-gray-100 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-400">
+                        <i class="fas fa-building text-2xl"></i>
+                    </div>
+                {% endif %}
+                <!-- Formulário para upload da logo -->
+                <form action="{{ url_for('empresa_dashboard') }}" method="post" enctype="multipart/form-data" class="mt-2">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Logo da Empresa</label>
+                    <input type="file" name="logo" accept=".png,.jpg,.jpeg" class="block w-full text-xs text-gray-500
+                        file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0
+                        file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100">
+                    <button type="submit" class="mt-1 bg-blindado-blue text-white text-xs py-1 px-3 rounded-md hover:bg-blindado-dark transition duration-300">
+                        Anexe sua Logo
+                    </button>
+                </form>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Dashboard da Empresa: {{ e.nome }}</h1>
+        </div>
+    </div>
 
     <!-- Status e Dados -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-8">
@@ -64,14 +89,8 @@
             </button>
         </form>
     </div>
-
-    <!-- Descrição -->
-    <div class="bg-blindado-light-blue p-4 md:p-6 rounded-lg">
-        <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2 md:mb-4">Descrição dos Serviços</h2>
-        <p class="text-sm md:text-base text-gray-700">{{ e.descricao or 'Não informado' }}</p>
-    </div>
-
-    <div class="bg-yellow-50 border border-yellow-200 p-4 md:p-6 rounded-lg shadow-sm">
+    <!-- Descrição e Saldo -->
+<div class="bg-yellow-50 border border-yellow-200 p-4 md:p-6 rounded-lg shadow-sm">
     <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2 md:mb-4 flex items-center">
         <i class="fas fa-coins text-yellow-500 mr-2"></i> Saldo
     </h2>
@@ -81,6 +100,10 @@
         Comprar Coins
     </a>
 </div>
-
+    <!-- Descrição -->
+    <div class="bg-blindado-light-blue p-4 md:p-6 rounded-lg">
+        <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2 md:mb-4">Descrição dos Serviços</h2>
+        <p class="text-sm md:text-base text-gray-700">{{ e.descricao or 'Não informado' }}</p>
+    </div>
 </div>
 {% endblock %}
