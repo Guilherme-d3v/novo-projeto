@@ -483,18 +483,40 @@ def admin_dashboard():
         empresas=empresas, condominios=condominios
     )
 
-@app.route("/dashboard/condominio")
+@app.route("/dashboard/condominio", methods=["GET", "POST"])
 @login_required
 def condominio_dashboard():
     user_id = session.get("user_id")
-    
+
     if session.get("user_type") != "condominio" or user_id == "admin":
         flash("Acesso negado.", "danger")
         return redirect(url_for("logout"))
-        
-    condominio = Condominio.query.get_or_404(user_id)
-        
-    return render_template("condominio_dashboard.html", c=condominio)
+
+    c = Condominio.query.get_or_404(user_id)
+
+    if c.needs_password_change:
+        return redirect(url_for("mudar_senha"))
+
+    if request.method == "POST":
+        documento = request.files.get("documento")
+        if documento and documento.filename:
+            if allowed_file(documento.filename) and documento.filename.lower().endswith(".pdf"):
+                safe = secure_filename(documento.filename)
+                c.pdf_filename = f"{uuid4().hex}_{safe}"
+                documento.save(UPLOAD_DIR / c.pdf_filename)
+                db.session.commit()
+                flash("Documento enviado com sucesso!", "success")
+            else:
+                flash("Envie um PDF válido.", "warning")
+
+        # Lidar com consentimento LGPD e Termos de Uso
+        if 'lgpd-consent' in request.form:
+            c.lgpd_consent = True
+        if 'terms-consent' in request.form:
+            c.terms_consent = True
+        db.session.commit()
+
+    return render_template("condominio_dashboard.html", c=c)
 
 
 @app.route("/dashboard/condominio/licitacoes")
@@ -709,6 +731,13 @@ def empresa_dashboard():
                     flash("Logo enviada com sucesso!", "success")
                 else:
                     flash("Envie uma imagem válida (PNG ou JPEG).", "warning")
+
+        # Lidar com consentimento LGPD e Termos de Uso
+        if 'lgpd-consent' in request.form:
+            e.lgpd_consent = True
+        if 'terms-consent' in request.form:
+            e.terms_consent = True
+        db.session.commit()
 
     return render_template("empresa_dashboard.html", e=e)
 
@@ -1418,7 +1447,7 @@ def mp_criar_assinatura_recorrente():
 
             return {"init_point": preference["init_point"], "preference_id": preference["id"]}, 200
         else:
-            app.logger.error(f"Erro MP ao criar pré-aprovação: {preapproval_response}")
+            #app.logger.error(f"Erro MP ao criar pré-aprovação: {preapproval_response}")    (consertar esse erro kkkk ta foda)
             return {"error": "Falha ao criar assinatura. Tente novamente mais tarde."}, 500
 
     except Exception as e:

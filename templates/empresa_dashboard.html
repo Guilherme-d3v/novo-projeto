@@ -89,21 +89,43 @@
             </button>
         </form>
     </div>
-    <!-- Descrição e Saldo -->
-<div class="bg-yellow-50 border border-yellow-200 p-4 md:p-6 rounded-lg shadow-sm">
-    <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2 md:mb-4 flex items-center">
-        <i class="fas fa-coins text-yellow-500 mr-2"></i> Saldo
-    </h2>
-    <p class="text-3xl font-bold text-gray-900">{{ e.saldo_coins or 0 }}</p>
-    <p class="text-xs text-gray-500 mb-4">Coins disponíveis para licitações</p>
-    <a href="{{ url_for('comprar_coins') }}" class="inline-block bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition duration-300 text-sm font-semibold w-full text-center">
-        Comprar Coins
-    </a>
-</div>
+
     <!-- Descrição -->
-    <div class="bg-blindado-light-blue p-4 md:p-6 rounded-lg">
+    <div class="bg-blindado-light-blue p-4 md:p-6 rounded-lg mb-4 md:mb-8">
         <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2 md:mb-4">Descrição dos Serviços</h2>
         <p class="text-sm md:text-base text-gray-700">{{ e.descricao or 'Não informado' }}</p>
+    </div>
+
+    <!-- Consentimento LGPD e Termos de Uso -->
+    <div class="bg-gray-50 p-4 md:p-6 rounded-lg border border-gray-200 mt-6">
+        <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-4">Consentimento e Termos</h2>
+
+        <form action="{{ url_for('empresa_dashboard') }}" method="post" class="space-y-4">
+            <div class="flex items-start">
+                <input type="checkbox" id="lgpd-consent" name="lgpd-consent"
+                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                       {% if e.lgpd_consent %}checked{% endif %}>
+                <label for="lgpd-consent" class="ml-2 text-sm md:text-base font-medium text-gray-700">
+                    <span class="font-semibold">Consentimento LGPD *</span><br>
+                    Autorizo o uso dos meus dados para fins de qualificação, verificação e contato sobre oportunidades de negócio.
+                    <a href="#" class="text-blindado-blue hover:underline">Ver Política de Privacidade</a>
+                </label>
+            </div>
+
+            <div class="flex items-start">
+                <input type="checkbox" id="terms-consent" name="terms-consent"
+                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                       {% if e.terms_consent %}checked{% endif %}>
+                <label for="terms-consent" class="ml-2 text-sm md:text-base font-medium text-gray-700">
+                    <span class="font-semibold">Aceite dos Termos *</span><br>
+                    Li e aceito os <a href="#" class="text-blindado-blue hover:underline">Termos de Uso</a> e as condições do programa de verificação.
+                </label>
+            </div>
+
+            <button type="submit" class="mt-4 bg-blindado-blue text-white py-2 px-4 rounded-lg hover:bg-blindado-dark transition duration-300">
+                Salvar Consentimentos
+            </button>
+        </form>
     </div>
 </div>
 {% endblock %}

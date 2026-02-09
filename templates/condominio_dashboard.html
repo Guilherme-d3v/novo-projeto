@@ -8,9 +8,9 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-8">
         <div class="bg-yellow-50 p-4 md:p-6 rounded-lg border border-yellow-200">
             <h2 class="text-xl font-bold text-gray-800 mb-2">Status da Assinatura</h2>
-            
+
             <p class="text-lg font-semibold mb-3">
-                Status: 
+                Status:
                 {% if c.subscription_status == 'active' %}
                     <span class="text-green-600">ATIVO</span>
                 {% elif c.subscription_status in ['trialing', 'past_due', 'incomplete'] %}
@@ -121,7 +121,7 @@
     </div>
 
     <!-- Objetivo e Observações -->
-    <div class="bg-blindado-light-blue p-4 md:p-6 rounded-lg">
+    <div class="bg-blindado-light-blue p-4 md:p-6 rounded-lg mb-4 md:mb-8">
         <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2 md:mb-4">Objetivo da Certificação</h2>
         <p class="text-sm md:text-base text-gray-700">{{ c.objetivo or 'Não informado' }}</p>
         {% if c.observacoes %}
@@ -130,5 +130,36 @@
         {% endif %}
     </div>
 
+    <!-- Consentimento LGPD e Termos de Uso -->
+    <div class="bg-gray-50 p-4 md:p-6 rounded-lg border border-gray-200 mt-6">
+        <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-4">Consentimento e Termos</h2>
+
+        <form action="{{ url_for('condominio_dashboard') }}" method="post" class="space-y-4">
+            <div class="flex items-start">
+                <input type="checkbox" id="lgpd-consent" name="lgpd-consent"
+                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                       {% if c.lgpd_consent %}checked{% endif %}>
+                <label for="lgpd-consent" class="ml-2 text-sm md:text-base font-medium text-gray-700">
+                    <span class="font-semibold">Consentimento LGPD *</span><br>
+                    Autorizo o uso dos meus dados para fins de qualificação, verificação e contato sobre oportunidades de negócio.
+                    <a href="#" class="text-blindado-blue hover:underline">Ver Política de Privacidade</a>
+                </label>
+            </div>
+
+            <div class="flex items-start">
+                <input type="checkbox" id="terms-consent" name="terms-consent"
+                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                       {% if c.terms_consent %}checked{% endif %}>
+                <label for="terms-consent" class="ml-2 text-sm md:text-base font-medium text-gray-700">
+                    <span class="font-semibold">Aceite dos Termos *</span><br>
+                    Li e aceito os <a href="#" class="text-blindado-blue hover:underline">Termos de Uso</a> e as condições do programa de verificação.
+                </label>
+            </div>
+
+            <button type="submit" class="mt-4 bg-blindado-blue text-white py-2 px-4 rounded-lg hover:bg-blindado-dark transition duration-300">
+                Salvar Consentimentos
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}
