@@ -119,6 +119,18 @@ class Empresa(db.Model):
     # 🌟 NOVO CAMPO: Saldo de Coins para Licitações 🌟
     saldo_coins = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
+    @property
+    def average_rating(self):
+        from sqlalchemy.sql import func
+        # Retorna a média de avaliações ou None se não houver nenhuma
+        avg = db.session.query(func.avg(Avaliacao.rating)).filter(Avaliacao.empresa_id == self.id).scalar()
+        return avg if avg is not None else 0
+
+    @property
+    def service_count(self):
+        # Retorna o número de serviços concluídos (licitações vencidas)
+        return Licitacao.query.filter_by(empresa_vencedora_id=self.id, status='concluida').count()
+        
     def set_password(self, password):
         """Hashea e salva a senha."""
         self.password_hash = generate_password_hash(password)
@@ -147,12 +159,24 @@ class Licitacao(db.Model):
     status = db.Column(db.String(20), default="aberta") # aberta, fechada, cancelada, concluida
     custo_coins = db.Column(db.Integer, default=10) # Custo para uma empresa se candidatar
     
+    # NOVO: Campo para armazenar o orçamento da proposta vencedora
+    valor_orcamento = db.Column(db.Float, nullable=True)
+    
+    # NOVO: ID da empresa que venceu a licitação
+    empresa_vencedora_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relacionamentos
     condominio = db.relationship('Condominio', backref=db.backref('licitacoes', lazy=True))
     candidaturas = db.relationship('Candidatura', backref='licitacao', lazy=True)
+    
+    # NOVO: Relacionamento com a empresa vencedora
+    empresa_vencedora = db.relationship('Empresa', foreign_keys=[empresa_vencedora_id])
+    
+    # NOVO: Relacionamento com a avaliação (se houver)
+    avaliacao = db.relationship('Avaliacao', backref='licitacao', uselist=False, cascade="all, delete-orphan")
 
 
 class Candidatura(db.Model):
@@ -163,7 +187,9 @@ class Candidatura(db.Model):
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
     
     mensagem = db.Column(db.Text) # Proposta inicial ou apresentação
-    preco_estimado = db.Column(db.String(50)) # Opcional
+    
+    # ALTERADO: Mudando de String para Float para permitir cálculos
+    valor_proposta = db.Column(db.Float, nullable=True)
     
     status = db.Column(db.String(20), default="pendente") # pendente, aceita, rejeitada
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -210,3 +236,23 @@ class TransacaoPlano(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     condominio = db.relationship('Condominio', backref=db.backref('transacoes_plano', lazy=True))
+
+# ------------------------------------------------------------------------
+# 🌟 NOVO MODELO PARA AVALIAÇÕES 🌟
+# ------------------------------------------------------------------------
+class Avaliacao(db.Model):
+    __tablename__ = 'avaliacao'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    licitacao_id = db.Column(db.Integer, db.ForeignKey('licitacao.id'), nullable=False, unique=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
+    condominio_id = db.Column(db.Integer, db.ForeignKey('condominio.id'), nullable=False)
+    
+    rating = db.Column(db.Integer, nullable=False) # Nota de 1 a 5
+    comment = db.Column(db.Text, nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamentos
+    empresa = db.relationship('Empresa', backref=db.backref('avaliacoes', lazy='dynamic'))
+    condominio = db.relationship('Condominio', backref=db.backref('avaliacoes', lazy='dynamic'))

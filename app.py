@@ -550,6 +550,74 @@ def condominio_detalhe_licitacao(licitacao_id):
 
     return render_template("condominio_detalhe_licitacao.html", licitacao=licitacao)
 
+@app.route("/dashboard/condominio/licitacao/<int:licitacao_id>/encerrar", methods=["POST"])
+@login_required
+def condominio_encerrar_licitacao(licitacao_id):
+    user_id = session.get("user_id")
+    if session.get("user_type") != "condominio":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    licitacao = Licitacao.query.get_or_404(licitacao_id)
+    if licitacao.condominio_id != user_id:
+        flash("Licitação não encontrada.", "danger")
+        return redirect(url_for("condominio_licitacoes"))
+
+    licitacao.status = "fechada"
+    db.session.commit()
+    flash("Licitação encerrada. Agora você pode escolher um vencedor.", "success")
+    return redirect(url_for("condominio_detalhe_licitacao", licitacao_id=licitacao.id))
+
+@app.route("/dashboard/condominio/licitacao/<int:licitacao_id>/vencedor/<int:candidatura_id>", methods=["POST"])
+@login_required
+def condominio_escolher_vencedor(licitacao_id, candidatura_id):
+    user_id = session.get("user_id")
+    if session.get("user_type") != "condominio":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    licitacao = Licitacao.query.get_or_404(licitacao_id)
+    if licitacao.condominio_id != user_id:
+        flash("Licitação não encontrada.", "danger")
+        return redirect(url_for("condominio_licitacoes"))
+
+    candidatura = Candidatura.query.get_or_404(candidatura_id)
+    licitacao.empresa_vencedora_id = candidatura.empresa_id
+    licitacao.status = "concluida"
+    db.session.commit()
+
+    flash(f"Empresa {candidatura.empresa.nome} escolhida como vencedora.", "success")
+    return redirect(url_for("condominio_detalhe_licitacao", licitacao_id=licitacao.id))
+
+@app.route("/dashboard/condominio/licitacao/<int:licitacao_id>/avaliar", methods=["POST"])
+@login_required
+def condominio_avaliar_servico(licitacao_id):
+    user_id = session.get("user_id")
+    if session.get("user_type") != "condominio":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    licitacao = Licitacao.query.get_or_404(licitacao_id)
+    if licitacao.condominio_id != user_id:
+        flash("Licitação não encontrada.", "danger")
+        return redirect(url_for("condominio_licitacoes"))
+
+    rating = request.form.get("rating")
+    comment = request.form.get("comment")
+
+    avaliacao = Avaliacao(
+        licitacao_id=licitacao.id,
+        empresa_id=licitacao.empresa_vencedora_id,
+        condominio_id=user_id,
+        rating=int(rating),
+        comment=comment
+    )
+    db.session.add(avaliacao)
+    db.session.commit()
+
+    flash("Avaliação enviada com sucesso.", "success")
+    return redirect(url_for("condominio_detalhe_licitacao", licitacao_id=licitacao.id))
+
 
 
 @app.route("/licitacoes/nova", methods=["GET", "POST"])
@@ -564,6 +632,15 @@ def criar_licitacao():
         titulo = request.form.get("titulo")
         tipo = request.form.get("tipo_servico")
         descricao = request.form.get("descricao")
+        valor_orcamento_str = request.form.get("valor_orcamento")
+
+        valor_orcamento = None
+        if valor_orcamento_str:
+            try:
+                valor_orcamento = float(valor_orcamento_str)
+            except ValueError:
+                flash("Valor do orçamento inválido.", "danger")
+                return redirect(request.url)
         
         if not titulo or not tipo or not descricao:
             flash("Preencha todos os campos obrigatórios.", "danger")
@@ -575,6 +652,7 @@ def criar_licitacao():
                 titulo=titulo,
                 tipo_servico=tipo,
                 descricao=descricao,
+                valor_orcamento=valor_orcamento,
                 status="aberta",
                 custo_coins=10 # Valor fixo por enquanto, pode ser dinâmico no futuro
             )
@@ -671,10 +749,21 @@ def candidatar_licitacao(_id):
         
         # 3. Criar Candidatura
         mensagem = request.form.get("mensagem", "")
+        valor_proposta_str = request.form.get("valor_proposta")
+
+        valor_proposta = None
+        if valor_proposta_str:
+            try:
+                valor_proposta = float(valor_proposta_str)
+            except ValueError:
+                flash("Valor da proposta inválido.", "danger")
+                return redirect(url_for("detalhe_licitacao", _id=lic.id))
+
         candidatura = Candidatura(
             licitacao_id=lic.id,
             empresa_id=empresa.id,
             mensagem=mensagem,
+            valor_proposta=valor_proposta,
             status="pendente"
         )
         
@@ -1081,6 +1170,43 @@ def admin_lista_gestores():
     return render_template("admin_lista_gestores.html",
                            gestores=gestores,
                            titulo="Gerentes de Condomínio")
+
+@app.route("/admin/licitacoes")
+@login_required
+def admin_licitacoes():
+    if session.get("user_type") != "admin":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    status_filter = request.args.get("status", "aberta")
+    query = Licitacao.query.order_by(Licitacao.created_at.desc())
+
+    if status_filter == "aberta":
+        licitacoes = query.filter(Licitacao.status == "aberta").all()
+    elif status_filter == "terminada":
+        licitacoes = query.filter(Licitacao.status.in_(["fechada", "concluida"])).all()
+    elif status_filter == "embargada":
+        licitacoes = query.filter(Licitacao.status == "embargada").all()
+    else:
+        licitacoes = query.all()
+
+    return render_template("admin_licitacoes.html", 
+                           licitacoes=licitacoes, 
+                           status_filter=status_filter)
+
+@app.route("/admin/licitacao/<int:licitacao_id>/embargar", methods=["POST"])
+@login_required
+def admin_embargar_licitacao(licitacao_id):
+    if session.get("user_type") != "admin":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    licitacao = Licitacao.query.get_or_404(licitacao_id)
+    licitacao.status = "embargada"
+    db.session.commit()
+
+    flash(f"A licitação '{licitacao.titulo}' foi embargada.", "success")
+    return redirect(url_for("admin_licitacoes"))
 
 @app.route("/condominios-certificados")
 def lista_certificados():

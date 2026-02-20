@@ -80,6 +80,11 @@
                                 <label for="mensagem" class="block text-gray-700 font-bold mb-2">Mensagem de Apresentação (Opcional)</label>
                                 <textarea name="mensagem" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blindado-blue" placeholder="Olá, somos especialistas neste serviço..."></textarea>
                             </div>
+                            <div class="mb-4">
+                                <label for="valor_proposta" class="block text-gray-700 font-bold mb-2">Sua Proposta de Orçamento (Opcional)</label>
+                                <input type="number" step="0.01" id="valor_proposta" name="valor_proposta" placeholder="Ex: 1400.00"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blindado-blue">
+                            </div>
                             <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-md">
                                 Confirmar Candidatura (-{{ lic.custo_coins }} Coins)
                             </button>

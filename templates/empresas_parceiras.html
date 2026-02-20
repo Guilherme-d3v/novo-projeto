@@ -9,12 +9,14 @@
             <div class="bg-gray-100 p-4 md:p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
                 <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2">{{ e.nome }}</h3>
                 <p class="text-sm text-gray-600 mb-2 md:mb-4">{{ e.descricao }}</p>
-                <div class="mt-2 text-sm text-gray-500 space-y-1 md:space-y-2">
-                    <p><strong>CNPJ:</strong> {{ e.cnpj }}</p>
-                    <p><strong>Cidades atendidas:</strong> {{ e.cidade }}, {{ e.estado }}</p>
-                    <p><strong>Contato:</strong> {{ e.email_comercial }}</p>
+                <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
+                    <div class="flex items-center">
+                        <i class="fas fa-star text-yellow-500 mr-1"></i>
+                        <span class="font-bold">{{ '%.1f'|format(e.average_rating) if e.average_rating else 'N/A' }}</span>
+                        <span class="ml-1">({{ e.service_count }} serviços)</span>
+                    </div>
                     {% if e.website %}
-                    <a href="{{ e.website }}" target="_blank" class="text-blue-600 hover:underline text-sm md:text-base">
+                    <a href="{{ e.website }}" target="_blank" class="text-blue-600 hover:underline">
                         Website
                     </a>
                     {% endif %}
