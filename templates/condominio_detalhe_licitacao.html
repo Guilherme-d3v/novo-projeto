@@ -141,9 +141,15 @@
     {% endif %}
     
     <div class="mt-8">
-        <a href="{{ url_for('condominio_licitacoes') }}" class="text-blindado-blue hover:underline">
-            &larr; Voltar para a lista de licitações
-        </a>
+        {% if session['user_type'] == 'admin' %}
+            <a href="{{ url_for('admin_licitacoes') }}" class="text-blindado-blue hover:underline">
+                &larr; Voltar para a lista de licitações
+            </a>
+        {% else %}
+            <a href="{{ url_for('condominio_licitacoes') }}" class="text-blindado-blue hover:underline">
+                &larr; Voltar para a lista de licitações
+            </a>
+        {% endif %}
     </div>
 
 </div>
