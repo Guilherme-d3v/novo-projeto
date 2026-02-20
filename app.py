@@ -31,7 +31,7 @@ import mercadopago # 🌟 IMPORT DO MERCADO PAGO 🌟
 # -----------------------------
 
 # Dependências LOCAIS que você precisa garantir que existam
-from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin, TransacaoPlano
+from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin, TransacaoPlano, Avaliacao
 from config import Config
 
 # Carregar variáveis de ambiente PRIMEIRO
@@ -602,14 +602,22 @@ def condominio_avaliar_servico(licitacao_id):
         flash("Licitação não encontrada.", "danger")
         return redirect(url_for("condominio_licitacoes"))
 
-    rating = request.form.get("rating")
+    rating_str = request.form.get("rating")
     comment = request.form.get("comment")
+
+    try:
+        rating = int(rating_str)
+        if not 1 <= rating <= 5:
+            raise ValueError("Rating fora do intervalo.")
+    except (ValueError, TypeError):
+        flash("Nota de avaliação inválida.", "danger")
+        return redirect(url_for("condominio_detalhe_licitacao", licitacao_id=licitacao.id))
 
     avaliacao = Avaliacao(
         licitacao_id=licitacao.id,
         empresa_id=licitacao.empresa_vencedora_id,
         condominio_id=user_id,
-        rating=int(rating),
+        rating=rating,
         comment=comment
     )
     db.session.add(avaliacao)
@@ -894,10 +902,12 @@ def admin_condominio_action(_id, acao):
                         f"Faça login em {url_for('login', _external=True)} para acessar e **MUDAR SUA SENHA IMEDIATAMENTE**."
                     )
                     mail.send(msg)
-                    flash(f"Aprovação salva. Rank {c.rank.value.capitalize()} atribuído. Senha temporária enviada por e-mail.", "success") # Updated flash message
+                    rank_display = c.rank.value.capitalize() if c.rank else "N/A"
+                    flash(f"Aprovação salva. Rank {rank_display} atribuído. Senha temporária enviada por e-mail.", "success") # Updated flash message
                 except Exception as e:
                     print("Falha ao enviar e-mail de senha temporária:", e)
-                    flash(f"Aprovação salva. Rank {c.rank.value.capitalize()} atribuído, mas houve falha ao enviar o e-mail. Verifique o console.", "warning") # Updated flash message
+                    rank_display = c.rank.value.capitalize() if c.rank else "N/A"
+                    flash(f"Aprovação salva. Rank {rank_display} atribuído, mas houve falha ao enviar o e-mail. Verifique o console.", "warning") # Updated flash message
 
         elif acao == "rejeitar":
             c.status = "rejeitado"
@@ -1602,7 +1612,6 @@ def mp_assinatura_status():
 # ------------------------------------------------------------------------
 # FIM DAS NOVAS ROTAS MERCADO PAGO (ASSINATURAS) 
 # ------------------------------------------------------------------------
-
 
 
 @app.context_processor

@@ -15,7 +15,7 @@ class Config:
     
     # PRIORIZA a DATABASE_URL do ambiente (que será o Neon no Render)
     # Usa SQLite como fallback APENAS para desenvolvimento local, se não houver a var.
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///site_condominio.db' #os.getenv("DATABASE_URL", 'sqlite:///site_condominio.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", 'sqlite:///site_condominio.db')
     
     # CORREÇÃO DE ESQUEMA: Altera o esquema de 'postgres://' (se o Render usar) para 'postgresql://' (exigido pelo SQLAlchemy)
     if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
