@@ -41,6 +41,14 @@
                 <div class="prose max-w-none text-gray-700 whitespace-pre-line">
                     {{ lic.descricao }}
                 </div>
+
+                {% if lic.valor_orcamento %}
+                <div class="mt-6 pt-6 border-t">
+                    <h4 class="text-md font-bold text-gray-800">Orçamento Estimado pelo Condomínio</h4>
+                    <p class="text-2xl font-bold text-green-600 mt-1">R$ {{ "%.2f"|format(lic.valor_orcamento) }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Este é um valor de referência e sua proposta pode variar.</p>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Botão de Ação -->

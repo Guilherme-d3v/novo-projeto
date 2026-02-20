@@ -1062,6 +1062,37 @@ def admin_set_active_condominio(_id):
 
     return redirect(url_for("admin_condominio_detalhe", _id=_id))
 
+@app.post("/admin/condominio/<int:_id>/edit-rank")
+@login_required
+def admin_edit_condominio_rank(_id):
+    if session.get("user_type") != "admin":
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    c = Condominio.query.get_or_404(_id)
+    new_rank_str = request.form.get("rank")
+
+    if not new_rank_str:
+        flash("Nenhum rank selecionado.", "danger")
+        return redirect(url_for("admin_condominio_detalhe", _id=_id))
+
+    try:
+        # Convert string to CondominioRank enum member
+        new_rank = CondominioRank[new_rank_str.upper()]
+        if c.rank == new_rank:
+            flash(f"O rank do condomínio já é {new_rank.value.capitalize()}.", "info")
+        else:
+            c.rank = new_rank
+            db.session.commit()
+            flash(f"Rank do condomínio atualizado para {new_rank.value.capitalize()}.", "success")
+    except KeyError:
+        flash("Rank inválido selecionado.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao atualizar o rank: {str(e)}", "danger")
+
+    return redirect(url_for("admin_condominio_detalhe", _id=_id))
+
 @app.post("/admin/empresa/<int:_id>/set-active")
 @login_required
 def admin_set_active_empresa(_id):
