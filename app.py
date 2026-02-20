@@ -537,14 +537,16 @@ def condominio_licitacoes():
 @login_required
 def condominio_detalhe_licitacao(licitacao_id):
     user_id = session.get("user_id")
-    if session.get("user_type") != "condominio":
+    user_type = session.get("user_type")
+
+    if user_type not in ["admin", "condominio"]:
         flash("Acesso restrito.", "danger")
         return redirect(url_for("logout"))
 
     licitacao = Licitacao.query.get_or_404(licitacao_id)
 
-    # Garante que o condomínio só possa ver suas próprias licitações
-    if licitacao.condominio_id != user_id:
+    # Se for um condomínio, garanta que ele só possa ver suas próprias licitações
+    if user_type == "condominio" and licitacao.condominio_id != user_id:
         flash("Licitação não encontrada.", "danger")
         return redirect(url_for("condominio_licitacoes"))
 
