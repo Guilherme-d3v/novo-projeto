@@ -24,6 +24,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from dotenv import load_dotenv
+from PIL import Image
 
 # 🌟 NOVO IMPORT DO STRIPE 🌟
 
@@ -503,7 +504,7 @@ def condominio_dashboard():
             if allowed_file(documento.filename) and documento.filename.lower().endswith(".pdf"):
                 safe = secure_filename(documento.filename)
                 c.pdf_filename = f"{uuid4().hex}_{safe}"
-                documento.save(UPLOAD_DIR / c.pdf_filename)
+                documento.save(str(UPLOAD_DIR / c.pdf_filename))
                 db.session.commit()
                 flash("Documento enviado com sucesso!", "success")
             else:
@@ -813,7 +814,7 @@ def empresa_dashboard():
                 if allowed_file(documento.filename):
                     safe = secure_filename(documento.filename)
                     e.doc_filename = f"{uuid4().hex}_{safe}"
-                    documento.save(UPLOAD_DIR / e.doc_filename)
+                    documento.save(str(UPLOAD_DIR / e.doc_filename))
                     db.session.commit()
                     flash("Documento enviado com sucesso!", "success")
                 else:
@@ -823,11 +824,29 @@ def empresa_dashboard():
             logo = request.files.get("logo")
             if logo and logo.filename:
                 if logo.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    safe = secure_filename(logo.filename)
-                    e.logo_filename = f"logo_{uuid4().hex}_{safe}"
-                    logo.save(UPLOAD_DIR / e.logo_filename)
-                    db.session.commit()
-                    flash("Logo enviada com sucesso!", "success")
+                    try:
+                        # Generate a safe filename and path
+                        safe = secure_filename(logo.filename)
+                        e.logo_filename = f"logo_{uuid4().hex}_{safe}"
+                        filepath = str(UPLOAD_DIR / e.logo_filename)
+                        
+                        # Open the uploaded image stream with Pillow
+                        img = Image.open(logo.stream)
+                        
+                        # Define target size and resize
+                        target_size = (200, 200)
+                        img.thumbnail(target_size)
+                        
+                        # Save the resized image
+                        img.save(filepath)
+                        
+                        db.session.commit()
+                        flash("Logo enviada e redimensionada com sucesso!", "success")
+                    except Exception as ex:
+                        # Rollback in case of error during image processing
+                        db.session.rollback()
+                        app.logger.error(f"Erro ao processar logo: {ex}", exc_info=True)
+                        flash("Ocorreu um erro ao processar a imagem da logo.", "danger")
                 else:
                     flash("Envie uma imagem válida (PNG ou JPEG).", "warning")
 
