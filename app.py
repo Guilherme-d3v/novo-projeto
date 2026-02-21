@@ -157,30 +157,14 @@ def index():
 @app.route("/certificar-condominio", methods=["GET", "POST"])
 def certificar_condominio():
     if request.method == "POST":
+        pdf_file = request.files.get("pdf")
+        form = request.form
+        
         try:
-            form = request.form
-            pdf_file = request.files.get("pdf")
-            
-            # A senha será gerada e enviada pelo Admin após a aprovação.
-            senha_provisoria = "placeholder_pre_aprovacao"
-            
             # Tratamento de erro para campos numéricos
-            unidades = 0
-            if form.get("unidades"):
-                try:
-                    unidades = int(form.get("unidades"))
-                except ValueError:
-                    flash("O número de unidades deve ser um valor numérico.", "danger")
-                    return redirect(request.url)
+            unidades = int(form.get("unidades", 0))
+            progress = int(form.get("progress", 0))
 
-            progress = 0
-            if form.get("progress"):
-                try:
-                    progress = int(form.get("progress"))
-                except ValueError:
-                    flash("O progresso deve ser um valor numérico.", "danger")
-                    return redirect(request.url)
-            
             c = Condominio(
                 nome=form.get("nome", "").strip(),
                 cnpj=form.get("cnpj", "").strip(),
@@ -204,49 +188,60 @@ def certificar_condominio():
             )
             
             # Ação: Salvar a senha PROVISÓRIA.
-            c.set_password(senha_provisoria)
+            c.set_password("placeholder_pre_aprovacao")
             
+            db.session.add(c)
+            db.session.flush() # Flush para obter o ID do condomínio (c.id)
+
+            # Lida com o upload do arquivo APÓS ter um ID
             if pdf_file and pdf_file.filename:
                 if not allowed_file(pdf_file.filename) or not pdf_file.filename.lower().endswith(".pdf"):
                     flash("Envie um PDF válido.", "warning")
+                    # Damos rollback pois o usuário já foi adicionado
+                    db.session.rollback()
                     return redirect(request.url)
-                safe = secure_filename(pdf_file.filename)
-                c.pdf_filename = f"{uuid4().hex}_{safe}"
-                # pdf_file.save(UPLOAD_DIR / c.pdf_filename) 
+                
+                # Cria o diretório específico para o condomínio
+                relative_dir = Path("condominio") / str(c.id)
+                full_dir = UPLOAD_DIR / relative_dir
+                full_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Salva o arquivo no diretório
+                safe_filename = f"{uuid4().hex}_{secure_filename(pdf_file.filename)}"
+                pdf_file.save(full_dir / safe_filename)
+                
+                # Salva o caminho relativo no banco de dados
+                c.pdf_filename = (relative_dir / safe_filename).as_posix()
 
+            # Envia o e-mail de verificação
+            if app.config.get("MAIL_USERNAME_SENDER") and c.email:
+                token = serializer.dumps({"kind": "condominio", "id": c.id})
+                verify_url = url_for("verificar_email", token=token, _external=True)
+                msg = Message(
+                    "Confirme seu e-mail - Condomínio Blindado",
+                    sender=app.config["MAIL_USERNAME_SENDER"], 
+                    recipients=[c.email],
+                    charset='utf-8'  
+                )
+                msg.body = (
+                    f"Olá {c.contato_nome or ''},\n\n"
+                    f"Recebemos sua solicitação para certificar o condomínio {c.nome}.\n"
+                    f"Para confirmar seu e-mail, clique no link abaixo:\n{verify_url}\n\n"
+                    f"Após a verificação, a solicitação aparecerá para o time administrativo."
+                )
+                mail.send(msg)
             
-            db.session.add(c)
-            db.session.commit()
-            
-            try:
-                # 🔴 ATENÇÃO: Alterado de MAIL_USERNAME para MAIL_USERNAME_SENDER (o e-mail verificado)
-                if app.config.get("MAIL_USERNAME_SENDER") and c.email:
-                    token = serializer.dumps({"kind": "condominio", "id": c.id})
-                    verify_url = url_for("verificar_email", token=token, _external=True)
-                    
-                    
-                    msg = Message(
-                        "Confirme seu e-mail - Condomínio Blindado",
-                        sender=app.config["MAIL_USERNAME_SENDER"], 
-                        recipients=[c.email],
-                        charset='utf-8'  
-                    )
-                    
-
-                    msg.body = (
-                        f"Olá {c.contato_nome or ''},\n\n"
-                        f"Recebemos sua solicitação para certificar o condomínio {c.nome}.\n"
-                        f"Para confirmar seu e-mail, clique no link abaixo:\n{verify_url}\n\n"
-                        f"Após a verificação, a solicitação aparecerá para o time administrativo."
-                    )
-                    mail.send(msg)
-            except Exception as e:
-                print("Falha ao enviar e-mail:", e)
+            db.session.commit() # Commit final
             
             flash("Solicitação enviada! Verifique seu e-mail para confirmar.", "success")
             return redirect(url_for("index"))
         
+        except ValueError:
+            flash("O número de unidades e progresso devem ser valores numéricos.", "danger")
+            return redirect(request.url)
         except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao certificar condomínio: {e}", exc_info=True)
             flash(f"Erro ao processar solicitação: {str(e)}", "danger")
             return redirect(request.url)
     
@@ -255,13 +250,10 @@ def certificar_condominio():
 @app.route("/cadastrar-empresa", methods=["GET", "POST"])
 def cadastrar_empresa():
     if request.method == "POST":
+        doc_file = request.files.get("doc")
+        form = request.form
+        
         try:
-            form = request.form
-            doc_file = request.files.get("doc")
-            
-            # A senha será gerada e enviada pelo Admin após a aprovação.
-            senha_provisoria = "placeholder_pre_aprovacao"
-            
             categorias = ",".join(request.form.getlist("categorias"))
             
             e = Empresa(
@@ -281,45 +273,53 @@ def cadastrar_empresa():
                 needs_password_change=False
             )
             
-            # Ação: Salvar a senha PROVISÓRIA.
-            e.set_password(senha_provisoria)
+            e.set_password("placeholder_pre_aprovacao")
             
+            db.session.add(e)
+            db.session.flush() # Flush para obter o ID da empresa (e.id)
+
             if doc_file and doc_file.filename:
                 if not allowed_file(doc_file.filename):
                     flash("Documento deve ser PDF/JPG/PNG.", "warning")
+                    db.session.rollback()
                     return redirect(request.url)
-                safe = secure_filename(doc_file.filename)
-                e.doc_filename = f"{uuid4().hex}_{safe}"
-                # doc_file.save(UPLOAD_DIR / e.doc_filename) 
+                
+                # Cria o diretório específico para a empresa
+                relative_dir = Path("empresa") / str(e.id)
+                full_dir = UPLOAD_DIR / relative_dir
+                full_dir.mkdir(parents=True, exist_ok=True)
+
+                safe_filename = f"{uuid4().hex}_{secure_filename(doc_file.filename)}"
+                doc_file.save(full_dir / safe_filename)
+                
+                e.doc_filename = (relative_dir / safe_filename).as_posix()
+
+            # Envia e-mail de verificação
+            if app.config.get("MAIL_USERNAME_SENDER") and e.email_comercial:
+                token = serializer.dumps({"kind": "empresa", "id": e.id})
+                verify_url = url_for("verificar_email", token=token, _external=True)
+                msg = Message(
+                    "Confirme seu e-mail - Verificação de Empresa",
+                    sender=app.config["MAIL_USERNAME_SENDER"], 
+                    recipients=[e.email_comercial],
+                    charset='utf-8'
+                )
+                msg.body = (
+                    f"Olá, recebemos o cadastro da empresa {e.nome}.\n"
+                    f"Confirme seu e-mail no link:\n{verify_url}\n\n"
+                    f"Após confirmar, sua solicitação entrará para análise do time administrativo."
+                )
+                mail.send(msg)
             
-            db.session.add(e)
             db.session.commit()
-            
-            try:
-                # 🔴 ATENÇÃO: Alterado de MAIL_USERNAME para MAIL_USERNAME_SENDER (o e-mail verificado)
-                if app.config.get("MAIL_USERNAME_SENDER") and e.email_comercial:
-                    token = serializer.dumps({"kind": "empresa", "id": e.id})
-                    verify_url = url_for("verificar_email", token=token, _external=True)
-                    msg = Message(
-                        "Confirme seu e-mail - Verificação de Empresa",
-                        sender=app.config["MAIL_USERNAME_SENDER"], 
-                        recipients=[e.email_comercial],
-                        charset='utf-8'
-                    )
-                    msg.body = (
-                        f"Olá, recebemos o cadastro da empresa {e.nome}.\n"
-                        f"Confirme seu e-mail no link:\n{verify_url}\n\n"
-                        f"Após confirmar, sua solicitação entrará para análise do time administrativo."
-                    )
-                    mail.send(msg)
-            except Exception as e:
-                print("Falha ao enviar e-mail:", e)
             
             flash("Cadastro enviado! Verifique seu e-mail para confirmar.", "success")
             return redirect(url_for("index"))
         
-        except Exception as e:
-            flash(f"Erro ao processar cadastro: {str(e)}", "danger")
+        except Exception as e_exc:
+            db.session.rollback()
+            app.logger.error(f"Erro ao cadastrar empresa: {e_exc}", exc_info=True)
+            flash(f"Erro ao processar cadastro: {str(e_exc)}", "danger")
             return redirect(request.url)
     
     return render_template("empresa_form.html")
@@ -516,16 +516,25 @@ def condominio_dashboard():
         return redirect(url_for("mudar_senha"))
 
     if request.method == "POST":
-        documento = request.files.get("documento")
-        if documento and documento.filename:
-            if allowed_file(documento.filename) and documento.filename.lower().endswith(".pdf"):
-                safe = secure_filename(documento.filename)
-                c.pdf_filename = f"{uuid4().hex}_{safe}"
-                documento.save(str(UPLOAD_DIR / c.pdf_filename))
-                db.session.commit()
-                flash("Documento enviado com sucesso!", "success")
-            else:
-                flash("Envie um PDF válido.", "warning")
+        if 'documento' in request.files:
+            documento = request.files.get("documento")
+            if documento and documento.filename:
+                if allowed_file(documento.filename) and documento.filename.lower().endswith(".pdf"):
+                    # Define the new path and create the directory
+                    relative_dir = Path("condominio") / str(c.id)
+                    full_dir = UPLOAD_DIR / relative_dir
+                    full_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Save the file
+                    safe_filename = f"{uuid4().hex}_{secure_filename(documento.filename)}"
+                    documento.save(full_dir / safe_filename)
+                    
+                    # Save the relative path to the database
+                    c.pdf_filename = (relative_dir / safe_filename).as_posix()
+                    db.session.commit()
+                    flash("Documento enviado com sucesso!", "success")
+                else:
+                    flash("Envie um PDF válido.", "warning")
 
         # Lidar com consentimento LGPD e Termos de Uso
         if 'lgpd-consent' in request.form:
@@ -884,43 +893,45 @@ def empresa_dashboard():
         return redirect(url_for("mudar_senha"))
 
     if request.method == "POST":
-        # Verifica se o upload é de um documento ou de uma logo
+        # Lógica de upload de documento
         if 'documento' in request.files:
             documento = request.files.get("documento")
             if documento and documento.filename:
                 if allowed_file(documento.filename):
-                    safe = secure_filename(documento.filename)
-                    e.doc_filename = f"{uuid4().hex}_{safe}"
-                    documento.save(str(UPLOAD_DIR / e.doc_filename))
+                    relative_dir = Path("empresa") / str(e.id)
+                    full_dir = UPLOAD_DIR / relative_dir
+                    full_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    safe_filename = f"{uuid4().hex}_{secure_filename(documento.filename)}"
+                    documento.save(full_dir / safe_filename)
+                    
+                    e.doc_filename = (relative_dir / safe_filename).as_posix()
                     db.session.commit()
                     flash("Documento enviado com sucesso!", "success")
                 else:
                     flash("Envie um arquivo válido (PDF/JPG/PNG).", "warning")
 
+        # Lógica de upload de logo
         if 'logo' in request.files:
             logo = request.files.get("logo")
             if logo and logo.filename:
                 if logo.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
                     try:
-                        # Generate a safe filename and path
-                        safe = secure_filename(logo.filename)
-                        e.logo_filename = f"logo_{uuid4().hex}_{safe}"
-                        filepath = str(UPLOAD_DIR / e.logo_filename)
+                        relative_dir = Path("empresa") / str(e.id)
+                        full_dir = UPLOAD_DIR / relative_dir
+                        full_dir.mkdir(parents=True, exist_ok=True)
+
+                        safe_filename = f"logo_{uuid4().hex}_{secure_filename(logo.filename)}"
+                        filepath = full_dir / safe_filename
                         
-                        # Open the uploaded image stream with Pillow
                         img = Image.open(logo.stream)
-                        
-                        # Define target size and resize
-                        target_size = (200, 200)
-                        img.thumbnail(target_size)
-                        
-                        # Save the resized image
+                        img.thumbnail((200, 200))
                         img.save(filepath)
                         
+                        e.logo_filename = (relative_dir / safe_filename).as_posix()
                         db.session.commit()
                         flash("Logo enviada e redimensionada com sucesso!", "success")
                     except Exception as ex:
-                        # Rollback in case of error during image processing
                         db.session.rollback()
                         app.logger.error(f"Erro ao processar logo: {ex}", exc_info=True)
                         flash("Ocorreu um erro ao processar a imagem da logo.", "danger")
