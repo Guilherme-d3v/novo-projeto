@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Responder Contato{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Responder Mensagem</h2>
+
+    <!-- Detalhes da Mensagem Original -->
+    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Mensagem Original</h3>
+        <div class="space-y-3">
+            <p><strong>De:</strong> {{ contato.nome }} ({{ contato.email }})</p>
+            <p><strong>Recebido em:</strong> {{ contato.created_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+            {% if contato.telefone %}<p><strong>Telefone:</strong> {{ contato.telefone }}</p>{% endif %}
+            <div class="mt-4 pt-4 border-t">
+                <p class="text-gray-700 whitespace-pre-wrap">{{ contato.mensagem }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário de Resposta -->
+    <div>
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Sua Resposta</h3>
+        <form action="{{ url_for('admin_responder_contato', contato_id=contato.id) }}" method="POST">
+            <div class="mb-4">
+                <label for="resposta" class="block text-gray-700 font-bold mb-2 sr-only">Resposta</label>
+                <textarea id="resposta" name="resposta" rows="8" required placeholder="Digite sua resposta aqui..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+
+            <div class="flex items-center justify-between mt-6">
+                <a href="{{ url_for('admin_contatos') }}" class="text-gray-600 hover:text-gray-800 font-semibold">
+                    &larr; Voltar para a lista
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-md">
+                    <i class="fas fa-paper-plane mr-2"></i> Enviar Resposta por E-mail
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

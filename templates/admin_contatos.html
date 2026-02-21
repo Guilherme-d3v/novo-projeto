@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Mensagens de Contato{% endblock %}
+{% block content %}
+<div class="w-full bg-white p-4 md:p-8 rounded-lg shadow-lg my-4 md:my-8">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Mensagens de Contato</h2>
+    {% if contatos %}
+        <div class="overflow-x-auto w-full">
+            <table class="min-w-full bg-white rounded-lg">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for contato in contatos %}
+                    <tr class="hover:bg-gray-50 {% if contato.status == 'nao_lido' %}font-bold{% endif %}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ contato.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ contato.nome }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ contato.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if contato.status == 'respondido' %}bg-green-100 text-green-800
+                                {% elif contato.status == 'lido' %}bg-blue-100 text-blue-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ contato.status.replace('_', ' ')|capitalize }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                            <a href="{{ url_for('admin_responder_contato', contato_id=contato.id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                Ver / Responder
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="bg-gray-100 p-6 rounded-lg text-center text-gray-500">
+            Nenhuma mensagem de contato recebida.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

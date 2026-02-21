@@ -32,7 +32,7 @@ import mercadopago # 🌟 IMPORT DO MERCADO PAGO 🌟
 # -----------------------------
 
 # Dependências LOCAIS que você precisa garantir que existam
-from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin, TransacaoPlano, Avaliacao
+from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin, TransacaoPlano, Avaliacao, Contato
 from config import Config
 
 # Carregar variáveis de ambiente PRIMEIRO
@@ -108,7 +108,23 @@ def faq():
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
     if request.method == "POST":
-        flash("Mensagem enviada com sucesso! Em breve entraremos em contato.", "success")
+        try:
+            form = request.form
+            novo_contato = Contato(
+                nome=form.get("nome"),
+                email=form.get("email"),
+                telefone=form.get("telefone"),
+                mensagem=form.get("mensagem"),
+                status="nao_lido"
+            )
+            db.session.add(novo_contato)
+            db.session.commit()
+            flash("Mensagem enviada com sucesso! Em breve entraremos em contato.", "success")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao salvar contato: {e}", exc_info=True)
+            flash(f"Ocorreu um erro ao enviar sua mensagem. Tente novamente mais tarde.", "danger")
+        
         return redirect(url_for("contato"))
     return render_template("contato.html")
 
@@ -1665,6 +1681,63 @@ def mp_assinatura_status():
 # FIM DAS NOVAS ROTAS MERCADO PAGO (ASSINATURAS) 
 # ------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------
+# 🌟 NOVAS ROTAS PARA GERENCIAR CONTATOS 🌟
+# ------------------------------------------------------------------------
+
+@app.route("/admin/contatos")
+@login_required
+def admin_contatos():
+    if session.get("user_type") != "admin":
+        return redirect(url_for("logout"))
+    
+    contatos = Contato.query.order_by(Contato.created_at.desc()).all()
+    return render_template("admin_contatos.html", contatos=contatos)
+
+@app.route("/admin/contato/<int:contato_id>", methods=["GET", "POST"])
+@login_required
+def admin_responder_contato(contato_id):
+    if session.get("user_type") != "admin":
+        return redirect(url_for("logout"))
+
+    contato = Contato.query.get_or_404(contato_id)
+
+    if request.method == "POST":
+        resposta = request.form.get("resposta")
+        if not resposta:
+            flash("O corpo da resposta não pode estar vazio.", "danger")
+            return redirect(url_for('admin_responder_contato', contato_id=contato_id))
+
+        try:
+            msg = Message(
+                f"Re: Contato de {contato.nome}", # Assunto do E-mail
+                sender=app.config["MAIL_USERNAME_SENDER"],
+                recipients=[contato.email]
+            )
+            msg.html = render_template(
+                "email/resposta_contato.html", 
+                nome_usuario=contato.nome, 
+                mensagem_original=contato.mensagem, 
+                resposta_admin=resposta
+            )
+            mail.send(msg)
+
+            contato.status = "respondido"
+            db.session.commit()
+
+            flash("Resposta enviada com sucesso!", "success")
+            return redirect(url_for("admin_contatos"))
+
+        except Exception as e:
+            flash(f"Erro ao enviar e-mail: {e}", "danger")
+            app.logger.error(f"Falha no envio de e-mail de resposta: {e}", exc_info=True)
+
+    # Marca como 'lido' ao visualizar, se ainda não foi lido.
+    if contato.status == "nao_lido":
+        contato.status = "lido"
+        db.session.commit()
+        
+    return render_template("admin_responder_contato.html", contato=contato)
 
 @app.context_processor
 def inject_user():
