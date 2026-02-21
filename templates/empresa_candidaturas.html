@@ -15,8 +15,8 @@
             <ul class="divide-y divide-gray-200">
                 {% for cand in candidaturas %}
                 <li class="p-6 hover:bg-gray-50 transition duration-150">
-                    {# O link pode levar ao detalhe da licitação original #}
-                    <a href="{{ url_for('detalhe_licitacao', _id=cand.licitacao.id) }}">
+                    {# O link agora aponta para a nova página de detalhe da empresa #}
+                    <a href="{{ url_for('empresa_detalhe_licitacao', licitacao_id=cand.licitacao.id) }}">
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-xl font-semibold text-blindado-blue hover:underline">{{ cand.licitacao.titulo }}</h2>

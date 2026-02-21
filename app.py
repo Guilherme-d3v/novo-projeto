@@ -25,6 +25,7 @@ from werkzeug.security import check_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from dotenv import load_dotenv
 from PIL import Image
+from sqlalchemy import asc
 
 # 🌟 NOVO IMPORT DO STRIPE 🌟
 
@@ -32,7 +33,7 @@ import mercadopago # 🌟 IMPORT DO MERCADO PAGO 🌟
 # -----------------------------
 
 # Dependências LOCAIS que você precisa garantir que existam
-from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin, TransacaoPlano, Avaliacao, Contato
+from models import db, Condominio, Empresa, CondominioRank, Licitacao, Candidatura, TransacaoCoin, TransacaoPlano, Avaliacao, Contato, MensagemLicitacao
 from config import Config
 
 # Carregar variáveis de ambiente PRIMEIRO
@@ -567,7 +568,12 @@ def condominio_detalhe_licitacao(licitacao_id):
         flash("Licitação não encontrada.", "danger")
         return redirect(url_for("condominio_licitacoes"))
 
-    return render_template("condominio_detalhe_licitacao.html", licitacao=licitacao)
+    return render_template(
+        "condominio_detalhe_licitacao.html", 
+        licitacao=licitacao,
+        MensagemLicitacao=MensagemLicitacao,
+        asc=asc
+    )
 
 @app.route("/dashboard/condominio/licitacao/<int:licitacao_id>/encerrar", methods=["POST"])
 @login_required
@@ -600,12 +606,66 @@ def condominio_escolher_vencedor(licitacao_id, candidatura_id):
         flash("Licitação não encontrada.", "danger")
         return redirect(url_for("condominio_licitacoes"))
 
-    candidatura = Candidatura.query.get_or_404(candidatura_id)
-    licitacao.empresa_vencedora_id = candidatura.empresa_id
-    licitacao.status = "concluida"
-    db.session.commit()
+    winning_candidatura = Candidatura.query.get_or_404(candidatura_id)
+    vencedora = winning_candidatura.empresa
+    
+    # --- Início da Lógica de Atualização ---
+    try:
+        # 1. Update Licitacao status
+        licitacao.empresa_vencedora_id = winning_candidatura.empresa_id
+        licitacao.status = "concluida"
+        app.logger.info(f"Licitação ID {licitacao.id} marcada como 'concluida'. Vencedor: Empresa ID {vencedora.id}")
 
-    flash(f"Empresa {candidatura.empresa.nome} escolhida como vencedora.", "success")
+        # 2. Update status of all candidaturas
+        emails_perdedoras = []
+        for cand in licitacao.candidaturas:
+            if cand.id == winning_candidatura.id:
+                cand.status = "aceita"
+                app.logger.info(f"Candidatura ID {cand.id} status alterado para 'aceita'.")
+            else:
+                cand.status = "rejeitada"
+                app.logger.info(f"Candidatura ID {cand.id} status alterado para 'rejeitada'.")
+                if cand.empresa:
+                    emails_perdedoras.append(cand.empresa.email_comercial)
+        
+        db.session.commit()
+        app.logger.info("Alterações de status da licitação e candidaturas foram commitadas no banco de dados.")
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Erro ao commitar alterações de status: {e}", exc_info=True)
+        flash("Ocorreu um erro ao atualizar os status. Tente novamente.", "danger")
+        return redirect(url_for("condominio_detalhe_licitacao", licitacao_id=licitacao.id))
+
+    # 3. Send email notifications
+    try:
+        # Email to winner
+        msg_vencedor = Message(
+            f"Parabéns! Sua proposta para a licitação '{licitacao.titulo}' foi aceita!",
+            sender=app.config["MAIL_USERNAME_SENDER"],
+            recipients=[vencedora.email_comercial]
+        )
+        msg_vencedor.body = f"Olá {vencedora.nome},\n\nSua proposta para a licitação '{licitacao.titulo}' foi aceita pelo condomínio {licitacao.condominio.nome}. Parabéns!\n\nPara iniciar a comunicação, acesse o portal e veja a licitação na sua área de 'Minhas Candidaturas'.\n\nAtenciosamente,\nEquipe Condomínio Blindado"
+        mail.send(msg_vencedor)
+
+        # Email to losers
+        if emails_perdedoras:
+            with mail.connect() as conn:
+                for email in emails_perdedoras:
+                    msg_perdedor = Message(
+                        f"Resultado da Licitação: {licitacao.titulo}",
+                        sender=app.config["MAIL_USERNAME_SENDER"],
+                        recipients=[email]
+                    )
+                    msg_perdedor.body = f"Olá,\n\nA licitação '{licitacao.titulo}' para a qual você se candidatou foi encerrada e outro fornecedor foi selecionado.\n\nAgradecemos seu interesse e encorajamos você a continuar participando de outras oportunidades em nossa plataforma."
+                    conn.send(msg_perdedor)
+        
+        flash(f"Empresa {vencedora.nome} escolhida como vencedora e notificações enviadas.", "success")
+
+    except Exception as e:
+        app.logger.error(f"Erro ao enviar emails de resultado da licitação: {e}", exc_info=True)
+        flash(f"Empresa {vencedora.nome} escolhida como vencedora, mas ocorreu um erro ao enviar as notificações por e-mail.", "warning")
+
     return redirect(url_for("condominio_detalhe_licitacao", licitacao_id=licitacao.id))
 
 @app.route("/dashboard/condominio/licitacao/<int:licitacao_id>/avaliar", methods=["POST"])
@@ -889,6 +949,32 @@ def empresa_candidaturas():
     candidaturas = db.session.query(Candidatura).join(Licitacao).filter(Candidatura.empresa_id == user_id).order_by(Licitacao.created_at.desc()).all()
 
     return render_template("empresa_candidaturas.html", candidaturas=candidaturas)
+
+
+@app.route("/dashboard/empresa/licitacao/<int:licitacao_id>")
+@login_required
+def empresa_detalhe_licitacao(licitacao_id):
+    user_id = session.get("user_id")
+    user_type = session.get("user_type")
+
+    if user_type != 'empresa':
+        flash("Acesso restrito.", "danger")
+        return redirect(url_for("logout"))
+
+    licitacao = Licitacao.query.get_or_404(licitacao_id)
+    
+    # Security check: Ensure the company is a candidate for this bid
+    candidatura = Candidatura.query.filter_by(licitacao_id=licitacao.id, empresa_id=user_id).first()
+    if not candidatura:
+        flash("Você não tem permissão para ver esta licitação.", "danger")
+        return redirect(url_for('empresa_candidaturas'))
+
+    return render_template(
+        "empresa_detalhe_licitacao.html",
+        licitacao=licitacao,
+        MensagemLicitacao=MensagemLicitacao,
+        asc=asc
+    )
 
 
 @app.post("/admin/condominio/<int:_id>/<string:acao>")
@@ -1684,6 +1770,42 @@ def mp_assinatura_status():
 # ------------------------------------------------------------------------
 # 🌟 NOVAS ROTAS PARA GERENCIAR CONTATOS 🌟
 # ------------------------------------------------------------------------
+
+@app.route("/licitacao/<int:licitacao_id>/enviar-mensagem", methods=["POST"])
+@login_required
+def enviar_mensagem_licitacao(licitacao_id):
+    licitacao = Licitacao.query.get_or_404(licitacao_id)
+    user_id = session.get("user_id")
+    user_type = session.get("user_type")
+
+    # Security check: ensure user is part of this bid
+    is_condominio_owner = user_type == 'condominio' and licitacao.condominio_id == user_id
+    is_empresa_winner = user_type == 'empresa' and licitacao.empresa_vencedora_id == user_id
+    
+    if not (is_condominio_owner or is_empresa_winner):
+        flash("Acesso não autorizado a este canal de mensagens.", "danger")
+        return redirect(url_for('index'))
+
+    conteudo = request.form.get("conteudo")
+    if not conteudo:
+        flash("A mensagem não pode estar vazia.", "warning")
+    else:
+        nova_mensagem = MensagemLicitacao(
+            licitacao_id=licitacao.id,
+            remetente_id=user_id,
+            remetente_tipo=user_type,
+            conteudo=conteudo
+        )
+        db.session.add(nova_mensagem)
+        db.session.commit()
+        flash("Mensagem enviada.", "success")
+
+    # Redirect back to the appropriate detail page
+    if user_type == 'condominio':
+        return redirect(url_for('condominio_detalhe_licitacao', licitacao_id=licitacao.id))
+    else: # 'empresa'
+        # This will be the company's view of the completed bid
+        return redirect(url_for('detalhe_licitacao', _id=licitacao.id))
 
 @app.route("/admin/contatos")
 @login_required

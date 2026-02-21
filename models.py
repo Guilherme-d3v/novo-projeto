@@ -267,3 +267,14 @@ class Contato(db.Model):
     mensagem = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default="nao_lido") # nao_lido, lido, respondido
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class MensagemLicitacao(db.Model):
+    __tablename__ = 'mensagem_licitacao'
+    id = db.Column(db.Integer, primary_key=True)
+    licitacao_id = db.Column(db.Integer, db.ForeignKey('licitacao.id'), nullable=False)
+    remetente_id = db.Column(db.Integer, nullable=False)
+    remetente_tipo = db.Column(db.String(20), nullable=False) # 'condominio' or 'empresa'
+    conteudo = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    licitacao = db.relationship('Licitacao', backref=db.backref('mensagens', lazy='dynamic'))
