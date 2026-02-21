@@ -608,26 +608,27 @@ def condominio_escolher_vencedor(licitacao_id, candidatura_id):
 
     winning_candidatura = Candidatura.query.get_or_404(candidatura_id)
     vencedora = winning_candidatura.empresa
-    
-    # --- Início da Lógica de Atualização ---
+
     try:
-        # 1. Update Licitacao status
+        # 1. Update Licitacao and winning candidatura status
         licitacao.empresa_vencedora_id = winning_candidatura.empresa_id
         licitacao.status = "concluida"
-        app.logger.info(f"Licitação ID {licitacao.id} marcada como 'concluida'. Vencedor: Empresa ID {vencedora.id}")
+        winning_candidatura.status = "aceita"
+        app.logger.info(f"Licitação ID {licitacao.id} marcada como 'concluida'. Candidatura vencedora ID {winning_candidatura.id} status: 'aceita'.")
 
-        # 2. Update status of all candidaturas
+        # 2. Explicitly query and update all other candidaturas for this licitacao
+        perdedoras = Candidatura.query.filter(
+            Candidatura.licitacao_id == licitacao_id,
+            Candidatura.id != candidatura_id
+        ).all()
+
         emails_perdedoras = []
-        for cand in licitacao.candidaturas:
-            if cand.id == winning_candidatura.id:
-                cand.status = "aceita"
-                app.logger.info(f"Candidatura ID {cand.id} status alterado para 'aceita'.")
-            else:
-                cand.status = "rejeitada"
-                app.logger.info(f"Candidatura ID {cand.id} status alterado para 'rejeitada'.")
-                if cand.empresa:
-                    emails_perdedoras.append(cand.empresa.email_comercial)
-        
+        for cand in perdedoras:
+            cand.status = "rejeitada"
+            app.logger.info(f"Candidatura perdedora ID {cand.id} status alterado para 'rejeitada'.")
+            if cand.empresa:
+                emails_perdedoras.append(cand.empresa.email_comercial)
+
         db.session.commit()
         app.logger.info("Alterações de status da licitação e candidaturas foram commitadas no banco de dados.")
 
@@ -637,7 +638,7 @@ def condominio_escolher_vencedor(licitacao_id, candidatura_id):
         flash("Ocorreu um erro ao atualizar os status. Tente novamente.", "danger")
         return redirect(url_for("condominio_detalhe_licitacao", licitacao_id=licitacao.id))
 
-    # 3. Send email notifications
+    # 3. Send email notifications (outside the main transaction)
     try:
         # Email to winner
         msg_vencedor = Message(
@@ -1804,8 +1805,7 @@ def enviar_mensagem_licitacao(licitacao_id):
     if user_type == 'condominio':
         return redirect(url_for('condominio_detalhe_licitacao', licitacao_id=licitacao.id))
     else: # 'empresa'
-        # This will be the company's view of the completed bid
-        return redirect(url_for('detalhe_licitacao', _id=licitacao.id))
+        return redirect(url_for('empresa_detalhe_licitacao', licitacao_id=licitacao.id))
 
 @app.route("/admin/contatos")
 @login_required
