@@ -202,7 +202,8 @@ def certificar_condominio():
                     return redirect(request.url)
                 
                 # Cria o diretório específico para o condomínio
-                relative_dir = Path("condominio") / str(c.id)
+                safe_name = secure_filename(c.nome)
+                relative_dir = Path("condominio") / f"{c.id}_{safe_name}"
                 full_dir = UPLOAD_DIR / relative_dir
                 full_dir.mkdir(parents=True, exist_ok=True)
                 
@@ -285,7 +286,8 @@ def cadastrar_empresa():
                     return redirect(request.url)
                 
                 # Cria o diretório específico para a empresa
-                relative_dir = Path("empresa") / str(e.id)
+                safe_name = secure_filename(e.nome)
+                relative_dir = Path("empresa") / f"{e.id}_{safe_name}"
                 full_dir = UPLOAD_DIR / relative_dir
                 full_dir.mkdir(parents=True, exist_ok=True)
 
@@ -521,7 +523,8 @@ def condominio_dashboard():
             if documento and documento.filename:
                 if allowed_file(documento.filename) and documento.filename.lower().endswith(".pdf"):
                     # Define the new path and create the directory
-                    relative_dir = Path("condominio") / str(c.id)
+                    safe_name = secure_filename(c.nome)
+                    relative_dir = Path("condominio") / f"{c.id}_{safe_name}"
                     full_dir = UPLOAD_DIR / relative_dir
                     full_dir.mkdir(parents=True, exist_ok=True)
                     
