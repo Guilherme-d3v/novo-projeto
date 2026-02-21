@@ -6,10 +6,19 @@
     {% if empresas %}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             {% for e in empresas %}
-            <div class="bg-gray-100 p-4 md:p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-                <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2">{{ e.nome }}</h3>
-                <p class="text-sm text-gray-600 mb-2 md:mb-4">{{ e.descricao }}</p>
-                <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
+            <div class="bg-gray-100 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                <div class="flex items-center mb-2">
+                    {% if e.logo_filename %}
+                        <img src="{{ url_for('uploaded_file', filename=e.logo_filename) }}" alt="Logo {{ e.nome }}" class="w-8 h-8 object-contain mr-2">
+                    {% else %}
+                        <div class="w-8 h-8 bg-gray-200 rounded-full mr-2 flex items-center justify-center">
+                            <i class="fas fa-building text-lg text-gray-400"></i>
+                        </div>
+                    {% endif %}
+                    <h3 class="text-xl font-bold text-gray-900">{{ e.nome }}</h3>
+                </div>
+                <p class="text-sm text-gray-600 mb-4 line-clamp-3 h-16">{{ e.descricao }}</p>
+                <div class="mt-auto w-full pt-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
                     <div class="flex items-center">
                         <i class="fas fa-star text-yellow-500 mr-1"></i>
                         <span class="font-bold">{{ '%.1f'|format(e.average_rating) if e.average_rating else 'N/A' }}</span>
