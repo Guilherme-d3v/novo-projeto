@@ -901,7 +901,8 @@ def empresa_dashboard():
             documento = request.files.get("documento")
             if documento and documento.filename:
                 if allowed_file(documento.filename):
-                    relative_dir = Path("empresa") / str(e.id)
+                    safe_name = secure_filename(e.nome)
+                    relative_dir = Path("empresa") / f"{e.id}_{safe_name}"
                     full_dir = UPLOAD_DIR / relative_dir
                     full_dir.mkdir(parents=True, exist_ok=True)
                     
@@ -920,7 +921,8 @@ def empresa_dashboard():
             if logo and logo.filename:
                 if logo.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
                     try:
-                        relative_dir = Path("empresa") / str(e.id)
+                        safe_name = secure_filename(e.nome)
+                        relative_dir = Path("empresa") / f"{e.id}_{safe_name}"
                         full_dir = UPLOAD_DIR / relative_dir
                         full_dir.mkdir(parents=True, exist_ok=True)
 
